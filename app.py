@@ -1,4 +1,4 @@
-import os, urllib.parse
+import os, json, urllib.request, urllib.parse
 from io import BytesIO
 from datetime import datetime, timedelta
 import streamlit as st
@@ -75,18 +75,26 @@ POTENCIAL_CASAS = {
     12: "Sensibilidade intuitiva refinada, compreensão psíquica e talento para atuar nos bastidores."
 }
 
-CIDADES_PADRAO = [
-    "São Paulo, SP", "Rio de Janeiro, RJ", "Belo Horizonte, MG", "Brasília, DF",
-    "Salvador, BA", "Fortaleza, CE", "Curitiba, PR", "Recife, PE", "Porto Alegre, RS",
-    "Manaus, AM", "Belém, PA", "Goiânia, GO", "Guarulhos, SP", "Campinas, SP",
-    "São Luís, MA", "Maceió, AL", "Natal, RN", "Teresina, PI", "Campo Grande, MS",
-    "João Pessoa, PB", "Aracaju, SE", "Cuiabá, MT", "Porto Velho, RO", "Florianópolis, SC",
-    "Macapá, AP", "Rio Branco, AC", "Vitória, ES", "Boa Vista, RR", "Palmas, TO",
-    "Santos, SP", "São Bernardo do Campo, SP", "Santo André, SP", "Osasco, SP",
-    "Ribeirão Preto, SP", "São José dos Campos, SP", "Sorocaba, SP", "Niterói, RJ",
-    "Uberlândia, MG", "Londrina, PR", "Joinville, SC", "Caxias do Sul, RS",
-    "Lisboa, Portugal", "Porto, Portugal", "Outra (digitar manualmente)"
+ESTADOS_BR = [
+    "SP - São Paulo", "RJ - Rio de Janeiro", "MG - Minas Gerais", "BA - Bahia",
+    "PR - Paraná", "RS - Rio Grande do Sul", "PE - Pernambuco", "CE - Ceará",
+    "PA - Pará", "SC - Santa Catarina", "GO - Goiás", "MA - Maranhão",
+    "AM - Amazonas", "ES - Espírito Santo", "PB - Paraíba", "RN - Rio Grande do Norte",
+    "MT - Mato Grosso", "AL - Alagoas", "PI - Piauí", "DF - Distrito Federal",
+    "MS - Mato Grosso do Sul", "SE - Sergipe", "RO - Rondônia", "TO - Tocantins",
+    "AC - Acre", "AP - Amapá", "RR - Roraima"
 ]
+
+@st.cache_data(ttl=86400)
+def carregar_municipios_ibge(sigla_uf):
+    try:
+        url = f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{sigla_uf}/municipios?orderBy=nome"
+        req = urllib.request.Request(url, headers={'User-Agent': 'AstrologiaConsciente/1.0'})
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            dados = json.loads(resp.read().decode('utf-8'))
+            return [m['nome'] for m in dados]
+    except Exception:
+        return []
 
 def obter_dado(obj, chave, padrao=0.0):
     if isinstance(obj, dict): return obj.get(chave, padrao)
@@ -151,8 +159,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
     cor_fundo_card = HexColor('#f5f4f9')
     cor_borda = HexColor('#dcd6f7')
 
-    # ========================== PÁGINA 1 ==========================
-    # Topo estilizado
+    # PÁGINA 1
     c.setFillColor(cor_escura)
     c.rect(0, h_page - 100, w_page, 100, fill=1, stroke=0)
     c.setFillColor(cor_ciano)
@@ -167,7 +174,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
     c.setFont("Helvetica", 9)
     c.drawString(45, h_page - 78, seguro_latin("Pesquisa & Metodologia: Douglas Rosa (@astrolodoug)"))
 
-    # Card do Consulente
     c.setFillColor(cor_fundo_card)
     c.setStrokeColor(cor_borda)
     c.roundRect(40, h_page - 170, w_page - 80, 55, 6, fill=1, stroke=1)
@@ -178,13 +184,11 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
     c.drawString(55, h_page - 146, seguro_latin(f"Local de Nascimento: {cid_c}"))
     c.drawString(320, h_page - 146, seguro_latin(f"Data de Referencia: {dt_ref}"))
 
-    # Tríade Natal & Área de Maior Potencial
     c.setFont("Helvetica-Bold", 12)
     c.setFillColor(cor_escura)
     c.drawString(45, h_page - 195, seguro_latin("1. Sintese da Matriz Natal & Eixo de Maior Potencial"))
     c.line(45, h_page - 200, w_page - 45, h_page - 200)
 
-    # Box Tríade
     c.setFillColor(cor_fundo_card)
     c.roundRect(40, h_page - 265, w_page - 80, 55, 6, fill=1, stroke=1)
     c.setFillColor(cor_escura)
@@ -193,7 +197,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
     c.drawString(55, h_page - 240, seguro_latin(f"• Lua Natal: {triade_info['lua']}"))
     c.drawString(55, h_page - 255, seguro_latin(f"• Ascendente: {triade_info['asc']}"))
 
-    # Box Potencial de Vida
     c.setFillColor(HexColor('#2b263b'))
     c.roundRect(40, h_page - 345, w_page - 80, 70, 6, fill=1, stroke=0)
     c.setFillColor(cor_ciano)
@@ -205,7 +208,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
     c.drawString(55, h_page - 326, seguro_latin(f"{pot_texto['descricao'][:85]}"))
     c.drawString(55, h_page - 338, seguro_latin(f"{pot_texto['descricao'][85:170]}"))
 
-    # Seção 2: Ponteiros Atuais
     c.setFont("Helvetica-Bold", 12)
     c.setFillColor(cor_escura)
     c.drawString(45, h_page - 370, seguro_latin("2. Posicionamento dos 9 Ponteiros Ativos no Momento"))
@@ -219,7 +221,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
         c.drawString(50, y_p, seguro_latin(txt))
         y_p -= 18
 
-    # Rodapé Pág 1
     c.setStrokeColor(cor_borda)
     c.line(45, 45, w_page - 45, 45)
     c.setFont("Helvetica", 8)
@@ -229,8 +230,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
 
     c.showPage()
 
-    # ========================== PÁGINA 2 ==========================
-    # Header menor
+    # PÁGINA 2
     c.setFillColor(cor_escura)
     c.rect(0, h_page - 55, w_page, 55, fill=1, stroke=0)
     c.setFillColor(cor_ciano)
@@ -239,7 +239,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
     c.setFont("Helvetica-Bold", 11)
     c.drawString(45, h_page - 34, seguro_latin("CRONOGRAMA PREDITIVO DOS PROXIMOS 12 MESES & DIRECIONAMENTO"))
 
-    # Seção 3: Ativações dos 12 Meses
     c.setFont("Helvetica-Bold", 12)
     c.setFillColor(cor_escura)
     c.drawString(45, h_page - 80, seguro_latin("3. Projecao dos 9 Ponteiros & Gatilhos no Tempo"))
@@ -252,7 +251,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
         c.drawString(50, y_f, seguro_latin(txt_proj))
         y_f -= 17
 
-    # Seção 4: Guia Didático
     c.setFont("Helvetica-Bold", 12)
     c.setFillColor(cor_escura)
     c.drawString(45, y_f - 15, seguro_latin("4. Guia Didatico: O Que Esperar Deste Periodo"))
@@ -276,7 +274,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
     c.drawString(65, y_f - 70, seguro_latin("Favorecem o reconhecimento do seu trabalho, alianças estratégicas e visibilidade."))
     c.drawString(65, y_f - 82, seguro_latin("Aproveite essas datas para iniciar projetos ou lançamentos."))
 
-    # Seção 5: Dedicatória Especial
     y_ded = y_f - 125
     c.setFont("Helvetica-Bold", 11)
     c.setFillColor(cor_escura)
@@ -298,7 +295,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
     c.setFont("Helvetica-Bold", 9)
     c.drawString(55, y_ded - 88, seguro_latin("Agendamentos e Cursos: Instagram @astrolodoug | WhatsApp: (11) 97711-7024"))
 
-    # Rodapé Pág 2
     c.setStrokeColor(cor_borda)
     c.line(45, 45, w_page - 45, 45)
     c.setFont("Helvetica", 8)
@@ -316,12 +312,26 @@ st.markdown("### A Dança dos Ponteiros: Relatório Preditivo e Mandala")
 st.sidebar.header("Dados do Consulente")
 nome = st.sidebar.text_input("Nome Completo", "Douglas Rosa")
 
-cid_selecionada = st.sidebar.selectbox("Cidade de Nascimento", CIDADES_PADRAO, index=0)
-if cid_selecionada == "Outra (digitar manualmente)":
-    cidade = st.sidebar.text_input("Digite sua cidade e estado/país:", value="Campinas, SP")
-else:
-    cidade = cid_selecionada
+# SELETOR OFICIAL DE MUNICÍPIOS (IBGE - 100% DAS CIDADES DO BRASIL)
+st.sidebar.markdown("---")
+st.sidebar.subheader("📍 Local de Nascimento")
+origem_tipo = st.sidebar.radio("Selecione a Origem:", ["Municípios do Brasil (Base IBGE)", "Outro País / Digitação Livre"], index=0)
 
+if origem_tipo == "Municípios do Brasil (Base IBGE)":
+    uf_escolhida = st.sidebar.selectbox("1. Estado (UF):", ESTADOS_BR, index=0)
+    sigla_uf = uf_escolhida.split(" - ")[0]
+    
+    lista_cidades_uf = carregar_municipios_ibge(sigla_uf)
+    if lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("São Paulo") if "São Paulo" in lista_cidades_uf else 0
+        mun_escolhido = st.sidebar.selectbox("2. Município:", lista_cidades_uf, index=idx_padrao)
+        cidade = f"{mun_escolhido}, {sigla_uf}, Brasil"
+    else:
+        cidade = st.sidebar.text_input("Município:", value=f"São Paulo, {sigla_uf}, Brasil")
+else:
+    cidade = st.sidebar.text_input("Digite Cidade, Estado/País:", value="Lisboa, Portugal")
+
+st.sidebar.markdown("---")
 ano = st.sidebar.number_input("Ano", 1900, 2100, 1989)
 mes = st.sidebar.number_input("Mês", 1, 12, 7)
 dia = st.sidebar.number_input("Dia", 1, 31, 13)
@@ -350,7 +360,7 @@ if st.session_state.mapa_gerado:
             geo = Nominatim(user_agent="astrolodoug_app")
             loc = geo.geocode(cidade)
             if not loc:
-                st.error("Cidade não encontrada.")
+                st.error(f"Localidade '{cidade}' não localizada no serviço cartográfico. Tente selecionar outro município ou digitar manualmente.")
             else:
                 lat, lng = loc.latitude, loc.longitude
                 tf = TimezoneFinder()
@@ -403,7 +413,6 @@ if st.session_state.mapa_gerado:
                 st.caption("ℹ️ Orbes aplicadas: 10° antes das Casas Angulares (1, 4, 7, 10) | 5° antes das Sucedentes (2, 5, 8, 11) | 3° antes das Cadentes (3, 6, 9, 12).")
                 st.table(tab_pl)
 
-                # Identificação de Maior Potencial de Vida
                 casa_destaque = mapa_casas_planetas.get("Sol", 10)
                 potencial_info = {
                     "titulo": f"{casa_destaque}ª Casa Zodiacal",
@@ -432,10 +441,9 @@ if st.session_state.mapa_gerado:
                 proj_pont = [(15,"Ponteiro de Mercúrio","Conjunção","Sol Natal","Sol"),(45,"Ponteiro de Vênus","Sextil","Lua Natal","Lua"),(90,"Ponteiro Solar","Quadratura","Marte Natal","Marte"),(150,"Ponteiro de Marte","Trígono","Meio do Céu","Sol"),(210,"Ponteiro de Júpiter","Oposição","Vênus Natal","Vênus"),(270,"Ponteiro de Saturno","Sextil","Ascendente","Marte"),(320,"Ponteiro de Urano","Trígono","Mercúrio Natal","Mercúrio"),(350,"Ponteiro de Netuno","Conjunção","Saturno Natal","Saturno")]
                 tab_fp = [{"Data": (DATA_ANALISE + timedelta(days=d)).strftime('%d/%m/%Y'), "Ponteiro": pt, "Aspecto": f"{asp} com {alvo}", "Regência": reg_de(p)} for d, pt, asp, alvo, p in proj_pont]
 
-                # Portal de Captura & Entrega
                 st.markdown("---")
                 st.markdown("## 🔒 Desbloqueie a Projeção de 12 Meses & Receba o seu Resumo")
-                st.info("Insira o seu WhatsApp ou E-mail e clique em **'Confirmar e Liberar'** para baixar o novo relatório estilizado em PDF ou recebê-lo via mensagem:")
+                st.info("Insira o seu WhatsApp ou E-mail e clique em **'Confirmar e Liberar'** para baixar o relatório estilizado em PDF ou recebê-lo via mensagem:")
 
                 c_lead1, c_lead2 = st.columns([3, 1])
                 contato_in = c_lead1.text_input(
