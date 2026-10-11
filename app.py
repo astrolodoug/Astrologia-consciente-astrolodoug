@@ -15,6 +15,12 @@ except ImportError:
 
 st.set_page_config(page_title="Astrologia Consciente | Astrolodoug", page_icon="✨", layout="wide")
 
+# Inicialização de memória de sessão para não reiniciar a tela no celular
+if "mapa_gerado" not in st.session_state:
+    st.session_state.mapa_gerado = False
+if "contato_salvo" not in st.session_state:
+    st.session_state.contato_salvo = ""
+
 st.markdown("""
 <style>
 .stApp { background: #2b263b; color: #f0f0f0; }
@@ -50,9 +56,9 @@ REG_TXT = {"Áries":"Marte","Touro":"Vênus","Gêmeos":"Mercúrio","Câncer":"Lu
 
 # Regra de Orbes das Casas
 ORBES_CASAS = {
-    1: 10.0, 4: 10.0, 7: 10.0, 10: 10.0, # Angulares: 10°
-    2: 5.0,  5: 5.0,  8: 5.0,  11: 5.0,  # Sucedentes: 5°
-    3: 3.0,  6: 3.0,  9: 3.0,  12: 3.0   # Cadentes: 3°
+    1: 10.0, 4: 10.0, 7: 10.0, 10: 10.0,
+    2: 5.0,  5: 5.0,  8: 5.0,  11: 5.0,
+    3: 3.0,  6: 3.0,  9: 3.0,  12: 3.0
 }
 
 CIDADES_PADRAO = [
@@ -185,7 +191,8 @@ DATA_ANALISE = datetime.combine(data_analise_input, datetime.min.time())
 
 FATORES = [("Ponteiro Solar",1.0,"Sol"),("Ponteiro de Mercúrio",1.066,"Mercúrio"),("Ponteiro de Vênus",1.133,"Vênus"),("Ponteiro de Marte",1.2,"Marte"),("Ponteiro de Júpiter",1.26,"Júpiter"),("Ponteiro de Saturno",1.32,"Saturno"),("Ponteiro de Urano",1.38,"Urano"),("Ponteiro de Netuno",1.44,"Netuno"),("Ponteiro de Plutão",1.5,"Plutão")]
 
-btn_gerar = st.sidebar.button("🔮 Gerar Mapa, Mandala e Relatório")
+if st.sidebar.button("🔮 Gerar Mapa, Mandala e Relatório"):
+    st.session_state.mapa_gerado = True
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📲 Conecte-se com Douglas Rosa")
@@ -193,7 +200,7 @@ st.sidebar.link_button("💬 Conversar no WhatsApp", "https://wa.me/551197711702
 st.sidebar.link_button("📸 Seguir no Instagram", "https://instagram.com/astrolodoug?dlrf=MWMyd2ZsendvemtnMQ%3D%3D", use_container_width=True)
 st.sidebar.link_button("▶️ Acessar Canal no YouTube", "https://youtube.com/@astrolodoug?si=YimzRQs7yL1jJMSO", use_container_width=True)
 
-if btn_gerar:
+if st.session_state.mapa_gerado:
     with st.spinner("A processar cálculos astrológicos..."):
         try:
             geo = Nominatim(user_agent="astrolodoug_app")
@@ -215,7 +222,6 @@ if btn_gerar:
 
                 casas_ref = [("1ª Casa (Ascendente)", sujeito.first_house, 1), ("2ª Casa", sujeito.second_house, 2), ("3ª Casa", sujeito.third_house, 3), ("4ª Casa (Fundo do Céu)", sujeito.fourth_house, 4), ("5ª Casa", sujeito.fifth_house, 5), ("6ª Casa", sujeito.sixth_house, 6), ("7ª Casa (Descendente)", sujeito.seventh_house, 7), ("8ª Casa", sujeito.eighth_house, 8), ("9ª Casa", sujeito.ninth_house, 9), ("10ª Casa (Meio do Céu)", sujeito.tenth_house, 10), ("11ª Casa", sujeito.eleventh_house, 11), ("12ª Casa", sujeito.twelfth_house, 12)]
                 
-                # Mapeamento de Cúspides Absolutas para Cálculo de Orbes
                 cuspides_abs = {num: float(obter_dado(oc, 'abs_pos', 0.0)) for _, oc, num in casas_ref}
                 casas_p = {p: [] for p in ["Sol","Lua","Mercúrio","Vênus","Marte","Júpiter","Saturno","Urano","Netuno","Plutão"]}
 
@@ -233,7 +239,6 @@ if btn_gerar:
 
                 planetas_dados = [("Sol", sujeito.sun), ("Lua", sujeito.moon), ("Mercúrio", sujeito.mercury), ("Vênus", sujeito.venus), ("Marte", sujeito.mars), ("Júpiter", sujeito.jupiter), ("Saturno", sujeito.saturn), ("Urano", sujeito.uranus), ("Netuno", sujeito.neptune), ("Plutão", sujeito.pluto)]
                 
-                # Aplicação da Regra de Orbes Dinâmicas
                 tab_pl = []
                 for pn, po in planetas_dados:
                     p_abs = float(obter_dado(po, 'abs_pos', 0.0))
@@ -275,61 +280,71 @@ if btn_gerar:
                 tab_fp = [{"Data": (DATA_ANALISE + timedelta(days=d)).strftime('%d/%m/%Y'), "Ponteiro": pt, "Aspecto": f"{asp} com {alvo}", "Regência": reg_de(p)} for d, pt, asp, alvo, p in proj_pont]
 
                 # =======================================================
-                # PORTAL DE CAPTAÇÃO E ENVIO MULTICANAL (PDF / WHATSAPP / E-MAIL)
+                # PORTAL DE CAPTAÇÃO E ENVIO MULTICANAL COM BOTÃO DE AÇÃO
                 # =======================================================
                 st.markdown("---")
                 st.markdown("## 🔒 Desbloqueie a Projeção de 12 Meses & Receba o seu Resumo")
-                st.info("Insira o seu WhatsApp ou E-mail para desbloquear as ativações do próximo ano e escolher como deseja receber o seu resumo:")
+                st.info("Insira o seu WhatsApp ou E-mail e clique em **'Confirmar e Liberar'** para desbloquear o relatório e enviá-lo diretamente:")
 
                 c_lead1, c_lead2 = st.columns([3, 1])
-                contato_in = c_lead1.text_input("WhatsApp (com DDD) ou E-mail:", placeholder="ex: 11999998888 ou seu@email.com")
+                contato_in = c_lead1.text_input(
+                    "WhatsApp (com DDD) ou E-mail:",
+                    value=st.session_state.contato_salvo,
+                    placeholder="ex: 11999998888 ou seu@email.com"
+                )
+                
+                # BOTÃO VISÍVEL NO ECRÃ PARA CONFIRMAÇÃO IMEDIATA NO TELEMÓVEL
+                btn_confirmar_contato = c_lead2.button("🔓 Confirmar e Liberar", use_container_width=True)
 
-                if contato_in:
-                    with open("leads.csv", "a", encoding="utf-8") as f:
-                        f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M')};{nome};{cidade};{contato_in}\n")
+                if (btn_confirmar_contato or contato_in) and contato_in.strip():
+                    st.session_state.contato_salvo = contato_in.strip()
+
+                if st.session_state.contato_salvo:
+                    try:
+                        with open("leads.csv", "a", encoding="utf-8") as f:
+                            f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M')};{nome};{cidade};{st.session_state.contato_salvo}\n")
+                    except Exception:
+                        pass
 
                     tab_pont_pdf = [{"Ponteiro": it["Ponteiro"], "Pos": it["Posição Atual"], "Reg": it["Regência Ativada"]} for it in tab_pont]
                     pdf_bytes = fabricar_pdf(nome, cidade, DATA_ANALISE.strftime('%d/%m/%Y'), tab_pont_pdf, tab_fp)
 
-                    st.success("✅ Acesso liberado! Escolha abaixo como deseja descarregar ou receber o seu resumo:")
+                    st.success(f"✅ Contacto registado: **{st.session_state.contato_salvo}**! Escolha abaixo como deseja receber ou enviar o seu resumo:")
 
-                    # Preparação do Texto Formatado para WhatsApp e E-mail
-                    txt_whats = f"✨ *Astrologia Consciente | A Dança dos Ponteiros*\n"
-                    txt_whats += f"👤 *Consulente:* {nome} ({cidade})\n"
-                    txt_whats += f"📅 *Data Base:* {DATA_ANALISE.strftime('%d/%m/%Y')}\n\n"
-                    txt_whats += "🔭 *Principais Ponteiros Ativos:*\n"
+                    # Mensagem personalizada direcionada a Douglas Rosa
+                    msg_txt = f"Olá Douglas Rosa (@astrolodoug)!\n\n"
+                    msg_txt += f"Gerei meu mapa na Astrologia Consciente:\n"
+                    msg_txt += f"👤 *Consulente:* {nome} ({cidade})\n"
+                    msg_txt += f"📱 *Meu Contato:* {st.session_state.contato_salvo}\n"
+                    msg_txt += f"📅 *Data Base:* {DATA_ANALISE.strftime('%d/%m/%Y')}\n\n"
+                    msg_txt += "🔭 *Ponteiros Ativos em Destaque:*\n"
                     for p_it in tab_pont[:4]:
-                        txt_whats += f"• {p_it['Ponteiro']}: {p_it['Posição Atual']}\n"
-                    txt_whats += "\n📅 *Próximas Ativações (12 Meses):*\n"
+                        msg_txt += f"• {p_it['Ponteiro']}: {p_it['Posição Atual']}\n"
+                    msg_txt += "\n📅 *Próximas Ativações (12 Meses):*\n"
                     for pr_it in tab_fp[:3]:
-                        txt_whats += f"• {pr_it['Data']}: {pr_it['Ponteiro']} em {pr_it['Aspecto']}\n"
-                    txt_whats += "\n🌟 *Idealizador:* Douglas Rosa (@astrolodoug) | wa.me/5511977117024"
+                        msg_txt += f"• {pr_it['Data']}: {pr_it['Ponteiro']} em {pr_it['Aspecto']}\n"
+                    msg_txt += "\nGostaria de entender melhor essas ativações e agendar uma análise aprofundada!"
 
-                    txt_encoded = urllib.parse.quote(txt_whats)
+                    txt_encoded = urllib.parse.quote(msg_txt)
                     
-                    digitos_tel = ''.join(filter(str.isdigit, contato_in))
-                    if len(digitos_tel) in [10, 11] and not digitos_tel.startswith('55'):
-                        num_whats = "55" + digitos_tel
-                    else:
-                        num_whats = digitos_tel
-
-                    link_whatsapp = f"https://api.whatsapp.com/send?phone={num_whats}&text={txt_encoded}" if num_whats else f"https://api.whatsapp.com/send?text={txt_encoded}"
-                    link_email = f"mailto:{contato_in if '@' in contato_in else ''}?subject={urllib.parse.quote('Seu Resumo Astrológico | Astrologia Consciente')}&body={txt_encoded}"
+                    # Links oficiais direcionados a Douglas Rosa
+                    link_whats_doug = f"https://api.whatsapp.com/send?phone=5511977117024&text={txt_encoded}"
+                    link_mail_doug = f"mailto:doug.douglas.santos@gmail.com?subject={urllib.parse.quote(f'Resumo Astrológico | {nome} ({cidade})')}&body={txt_encoded}"
 
                     col_btn1, col_btn2, col_btn3 = st.columns(3)
                     with col_btn1:
                         if pdf_bytes:
                             st.download_button(
-                                label="📥 Baixar PDF Completo",
+                                label="📥 Baixar PDF Direto",
                                 data=pdf_bytes,
                                 file_name=f"Relatorio_{nome.replace(' ','_')}.pdf",
                                 mime="application/pdf",
                                 use_container_width=True
                             )
                     with col_btn2:
-                        st.link_button("📲 Salvar no WhatsApp", link_whatsapp, use_container_width=True)
+                        st.link_button("📲 Enviar para o WhatsApp de Douglas", link_whats_doug, use_container_width=True)
                     with col_btn3:
-                        st.link_button("✉️ Enviar para meu E-mail", link_email, use_container_width=True)
+                        st.link_button("✉️ Enviar para o E-mail de Douglas", link_mail_doug, use_container_width=True)
 
                     st.markdown("---")
                     st.markdown(f"### 📅 Projeção dos 9 Ponteiros (12 Meses a partir de {DATA_ANALISE.strftime('%d/%m/%Y')})")
@@ -355,7 +370,7 @@ if btn_gerar:
                         st.success("Ensino e Expansão: Sol e Vênus favorecem alianças sólidas.")
                         st.info("Orientação: Momento ideal para difundir a Astrologia Consciente.")
                 else:
-                    st.warning("👆 Digite o seu WhatsApp ou E-mail no campo acima para desbloquear a projeção dos próximos 12 meses e receber o seu resumo.")
+                    st.warning("👆 Digite o seu WhatsApp ou E-mail e toque no botão **'🔓 Confirmar e Liberar'** para gerar os botões de envio e o PDF.")
 
         except Exception as e:
             st.error(f"Erro ao processar: {e}")
