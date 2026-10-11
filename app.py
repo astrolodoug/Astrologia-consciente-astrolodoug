@@ -1,4 +1,4 @@
-import os
+import os, urllib.parse
 from io import BytesIO
 from datetime import datetime, timedelta
 import streamlit as st
@@ -48,7 +48,13 @@ GLIFOS = dict(SIGNOS)
 REGENTES = {"Áries":["Marte"],"Touro":["Vênus"],"Gêmeos":["Mercúrio"],"Câncer":["Lua"],"Leão":["Sol"],"Virgem":["Mercúrio"],"Libra":["Vênus"],"Escorpião":["Marte","Plutão"],"Sagitário":["Júpiter"],"Capricórnio":["Saturno"],"Aquário":["Saturno","Urano"],"Peixes":["Júpiter","Netuno"]}
 REG_TXT = {"Áries":"Marte","Touro":"Vênus","Gêmeos":"Mercúrio","Câncer":"Lua","Leão":"Sol","Virgem":"Mercúrio","Libra":"Vênus","Escorpião":"Marte e Plutão","Sagitário":"Júpiter","Capricórnio":"Saturno","Aquário":"Saturno e Urano","Peixes":"Júpiter e Netuno"}
 
-# Lista de Cidades Principais para a Lista Suspensa
+# Regra de Orbes das Casas
+ORBES_CASAS = {
+    1: 10.0, 4: 10.0, 7: 10.0, 10: 10.0, # Angulares: 10°
+    2: 5.0,  5: 5.0,  8: 5.0,  11: 5.0,  # Sucedentes: 5°
+    3: 3.0,  6: 3.0,  9: 3.0,  12: 3.0   # Cadentes: 3°
+}
+
 CIDADES_PADRAO = [
     "São Paulo, SP", "Rio de Janeiro, RJ", "Belo Horizonte, MG", "Brasília, DF",
     "Salvador, BA", "Fortaleza, CE", "Curitiba, PR", "Recife, PE", "Porto Alegre, RS",
@@ -61,6 +67,10 @@ CIDADES_PADRAO = [
     "Uberlândia, MG", "Londrina, PR", "Joinville, SC", "Caxias do Sul, RS",
     "Lisboa, Portugal", "Porto, Portugal", "Outra (digitar manualmente)"
 ]
+
+def obter_dado(obj, chave, padrao=0.0):
+    if isinstance(obj, dict): return obj.get(chave, padrao)
+    return getattr(obj, chave, padrao)
 
 def nome_sig(r):
     s = str(r).strip()[:3].capitalize()
@@ -76,11 +86,21 @@ def fmt_g(g):
     n, gl = SIGNOS[idx]
     return f"{sob:.2f}° {gl} ({n})"
 
-def trad_c(v):
-    if isinstance(v, int): return f"{v}ª Casa"
-    cs = str(v).replace("_", " ").title()
-    t = {"First House":"1ª Casa","Second House":"2ª Casa","Third House":"3ª Casa","Fourth House":"4ª Casa","Fifth House":"5ª Casa","Sixth House":"6ª Casa","Seventh House":"7ª Casa","Eighth House":"8ª Casa","Ninth House":"9ª Casa","Tenth House":"10ª Casa","Eleventh House":"11ª Casa","Twelfth House":"12ª Casa"}
-    return t.get(cs, f"Casa {cs}")
+def calc_casa_orbe(p_abs, cuspides_dict):
+    p_abs = p_abs % 360
+    for h in range(1, 13):
+        c_at = cuspides_dict[h]
+        prox_h = 1 if h == 12 else h + 1
+        c_pr = cuspides_dict[prox_h]
+        tam = (c_pr - c_at) % 360
+        dist_ini = (p_abs - c_at) % 360
+        if 0 <= dist_ini < tam:
+            dist_prox = tam - dist_ini
+            orbe_prox = ORBES_CASAS[prox_h]
+            if dist_prox <= orbe_prox:
+                return prox_h, True, orbe_prox
+            return h, False, 0.0
+    return 1, False, 0.0
 
 def svg_mandala(subj):
     try:
@@ -93,8 +113,7 @@ def seguro_latin(t):
     return str(t).encode('latin-1', 'replace').decode('latin-1')
 
 def fabricar_pdf(nome_c, cid_c, dt_ref, tab_pont_raw, tab_proj_raw):
-    if not REPORTLAB_DISPONIVEL:
-        return None
+    if not REPORTLAB_DISPONIVEL: return None
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     c.setFont("Helvetica-Bold", 16)
@@ -147,7 +166,6 @@ st.markdown("### A Dança dos Ponteiros: Relatório Preditivo e Mandala")
 st.sidebar.header("Dados do Consulente")
 nome = st.sidebar.text_input("Nome Completo", "Douglas Rosa")
 
-# NOVO: CAMPO DE CIDADE COM LISTA SUSPENSA E BUSCA
 cid_selecionada = st.sidebar.selectbox("Cidade de Nascimento", CIDADES_PADRAO, index=0)
 if cid_selecionada == "Outra (digitar manualmente)":
     cidade = st.sidebar.text_input("Digite sua cidade e estado/país:", value="Campinas, SP")
@@ -181,7 +199,7 @@ if btn_gerar:
             geo = Nominatim(user_agent="astrolodoug_app")
             loc = geo.geocode(cidade)
             if not loc:
-                st.error("Cidade não encontrada. Tente inserir no formato 'Cidade, Estado' ou selecione outra na lista.")
+                st.error("Cidade não encontrada.")
             else:
                 lat, lng = loc.latitude, loc.longitude
                 tf = TimezoneFinder()
@@ -196,24 +214,42 @@ if btn_gerar:
                 if svg: st.components.v1.html(svg, height=650, scrolling=True)
 
                 casas_ref = [("1ª Casa (Ascendente)", sujeito.first_house, 1), ("2ª Casa", sujeito.second_house, 2), ("3ª Casa", sujeito.third_house, 3), ("4ª Casa (Fundo do Céu)", sujeito.fourth_house, 4), ("5ª Casa", sujeito.fifth_house, 5), ("6ª Casa", sujeito.sixth_house, 6), ("7ª Casa (Descendente)", sujeito.seventh_house, 7), ("8ª Casa", sujeito.eighth_house, 8), ("9ª Casa", sujeito.ninth_house, 9), ("10ª Casa (Meio do Céu)", sujeito.tenth_house, 10), ("11ª Casa", sujeito.eleventh_house, 11), ("12ª Casa", sujeito.twelfth_house, 12)]
+                
+                # Mapeamento de Cúspides Absolutas para Cálculo de Orbes
+                cuspides_abs = {num: float(obter_dado(oc, 'abs_pos', 0.0)) for _, oc, num in casas_ref}
                 casas_p = {p: [] for p in ["Sol","Lua","Mercúrio","Vênus","Marte","Júpiter","Saturno","Urano","Netuno","Plutão"]}
 
                 tab_c = []
                 for nc, oc, num in casas_ref:
-                    sn = nome_sig(oc.get('sign', ''))
+                    sn = nome_sig(obter_dado(oc, 'sign', ''))
                     for r in REGENTES.get(sn, []):
                         if r in casas_p: casas_p[r].append(f"Casa {num}")
-                    tab_c.append({"Casa Astrológica": nc, "Cúspide": f"{oc['position']:.2f}° {fmt_sig(sn)}", "Regentes": REG_TXT.get(sn, "Desconhecido")})
+                    pos_c = float(obter_dado(oc, 'position', 0.0))
+                    tab_c.append({"Casa Astrológica": nc, "Cúspide": f"{pos_c:.2f}° {fmt_sig(sn)}", "Regentes": REG_TXT.get(sn, "Desconhecido")})
 
                 st.markdown("---")
                 st.markdown("### 🏛️ Cúspides e Regências das Casas Natais")
                 st.table(tab_c)
 
                 planetas_dados = [("Sol", sujeito.sun), ("Lua", sujeito.moon), ("Mercúrio", sujeito.mercury), ("Vênus", sujeito.venus), ("Marte", sujeito.mars), ("Júpiter", sujeito.jupiter), ("Saturno", sujeito.saturn), ("Urano", sujeito.uranus), ("Netuno", sujeito.neptune), ("Plutão", sujeito.pluto)]
-                tab_pl = [{"Planeta": pn, "Posição": f"{po['position']:.2f}° {fmt_sig(po.get('sign',''))}", "Casa Natal": trad_c(po.get('house', 1)), "Regente": REG_TXT.get(nome_sig(po.get('sign','')), "Desconhecido")} for pn, po in planetas_dados]
+                
+                # Aplicação da Regra de Orbes Dinâmicas
+                tab_pl = []
+                for pn, po in planetas_dados:
+                    p_abs = float(obter_dado(po, 'abs_pos', 0.0))
+                    num_casa, por_orbe, orbe_val = calc_casa_orbe(p_abs, cuspides_abs)
+                    rotulo_casa = f"{num_casa}ª Casa (orbe de {int(orbe_val)}°)" if por_orbe else f"{num_casa}ª Casa"
+                    pos_p = float(obter_dado(po, 'position', 0.0))
+                    tab_pl.append({
+                        "Planeta": pn,
+                        "Posição": f"{pos_p:.2f}° {fmt_sig(obter_dado(po, 'sign', ''))}",
+                        "Casa Natal (com Orbe)": rotulo_casa,
+                        "Regente": REG_TXT.get(nome_sig(obter_dado(po, 'sign', '')), "Desconhecido")
+                    })
 
                 st.markdown("---")
-                st.markdown("### 🪐 Posicionamentos Natais nas Casas")
+                st.markdown("### 🪐 Posicionamentos Natais nas Casas (com Orbes de Cúspides)")
+                st.caption("ℹ️ Orbes aplicadas: 10° antes das Casas Angulares (1, 4, 7, 10) | 5° antes das Sucedentes (2, 5, 8, 11) | 3° antes das Cadentes (3, 6, 9, 12).")
                 st.table(tab_pl)
 
                 def reg_de(p):
@@ -222,7 +258,7 @@ if btn_gerar:
 
                 dt_nasc = datetime(int(ano), int(mes), int(dia), int(hora), int(minuto))
                 dias_v = (DATA_ANALISE - dt_nasc).days
-                asc_b = sujeito.first_house['abs_pos']
+                asc_b = float(obter_dado(sujeito.first_house, 'abs_pos', 0.0))
 
                 tab_pont = [{"Ponteiro": pn, "Posição Atual": fmt_g((asc_b + (dias_v / 0.25 / ft)) % 360), "Fator": f"{ft:.3f}", "Regência Ativada": reg_de(pb)} for pn, ft, pb in FATORES]
                 st.markdown("---")
@@ -238,13 +274,15 @@ if btn_gerar:
                 proj_pont = [(15,"Ponteiro de Mercúrio","Conjunção","Sol Natal","Sol"),(45,"Ponteiro de Vênus","Sextil","Lua Natal","Lua"),(90,"Ponteiro Solar","Quadratura","Marte Natal","Marte"),(150,"Ponteiro de Marte","Trígono","Meio do Céu","Sol"),(210,"Ponteiro de Júpiter","Oposição","Vênus Natal","Vênus"),(270,"Ponteiro de Saturno","Sextil","Ascendente","Marte"),(320,"Ponteiro de Urano","Trígono","Mercúrio Natal","Mercúrio"),(350,"Ponteiro de Netuno","Conjunção","Saturno Natal","Saturno")]
                 tab_fp = [{"Data": (DATA_ANALISE + timedelta(days=d)).strftime('%d/%m/%Y'), "Ponteiro": pt, "Aspecto": f"{asp} com {alvo}", "Regência": reg_de(p)} for d, pt, asp, alvo, p in proj_pont]
 
-                # Portal de Captura de Lead & Download de PDF
+                # =======================================================
+                # PORTAL DE CAPTAÇÃO E ENVIO MULTICANAL (PDF / WHATSAPP / E-MAIL)
+                # =======================================================
                 st.markdown("---")
-                st.markdown("## 🔒 Desbloqueie a Projeção de 12 Meses & Receba o seu PDF")
-                st.info("Insira o seu contacto para desbloquear as ativações do próximo ano e descarregar o seu relatório completo em PDF:")
+                st.markdown("## 🔒 Desbloqueie a Projeção de 12 Meses & Receba o seu Resumo")
+                st.info("Insira o seu WhatsApp ou E-mail para desbloquear as ativações do próximo ano e escolher como deseja receber o seu resumo:")
 
                 c_lead1, c_lead2 = st.columns([3, 1])
-                contato_in = c_lead1.text_input("WhatsApp ou E-mail:", placeholder="ex: 11999998888 ou seu@email.com")
+                contato_in = c_lead1.text_input("WhatsApp (com DDD) ou E-mail:", placeholder="ex: 11999998888 ou seu@email.com")
 
                 if contato_in:
                     with open("leads.csv", "a", encoding="utf-8") as f:
@@ -253,15 +291,45 @@ if btn_gerar:
                     tab_pont_pdf = [{"Ponteiro": it["Ponteiro"], "Pos": it["Posição Atual"], "Reg": it["Regência Ativada"]} for it in tab_pont]
                     pdf_bytes = fabricar_pdf(nome, cidade, DATA_ANALISE.strftime('%d/%m/%Y'), tab_pont_pdf, tab_fp)
 
-                    st.success("✅ Acesso libertado com sucesso!")
-                    if pdf_bytes:
-                        st.download_button(
-                            label="📥 Descarregar meu Relatório Completo em PDF",
-                            data=pdf_bytes,
-                            file_name=f"Relatorio_{nome.replace(' ','_')}.pdf",
-                            mime="application/pdf",
-                            use_container_width=True
-                        )
+                    st.success("✅ Acesso liberado! Escolha abaixo como deseja descarregar ou receber o seu resumo:")
+
+                    # Preparação do Texto Formatado para WhatsApp e E-mail
+                    txt_whats = f"✨ *Astrologia Consciente | A Dança dos Ponteiros*\n"
+                    txt_whats += f"👤 *Consulente:* {nome} ({cidade})\n"
+                    txt_whats += f"📅 *Data Base:* {DATA_ANALISE.strftime('%d/%m/%Y')}\n\n"
+                    txt_whats += "🔭 *Principais Ponteiros Ativos:*\n"
+                    for p_it in tab_pont[:4]:
+                        txt_whats += f"• {p_it['Ponteiro']}: {p_it['Posição Atual']}\n"
+                    txt_whats += "\n📅 *Próximas Ativações (12 Meses):*\n"
+                    for pr_it in tab_fp[:3]:
+                        txt_whats += f"• {pr_it['Data']}: {pr_it['Ponteiro']} em {pr_it['Aspecto']}\n"
+                    txt_whats += "\n🌟 *Idealizador:* Douglas Rosa (@astrolodoug) | wa.me/5511977117024"
+
+                    txt_encoded = urllib.parse.quote(txt_whats)
+                    
+                    digitos_tel = ''.join(filter(str.isdigit, contato_in))
+                    if len(digitos_tel) in [10, 11] and not digitos_tel.startswith('55'):
+                        num_whats = "55" + digitos_tel
+                    else:
+                        num_whats = digitos_tel
+
+                    link_whatsapp = f"https://api.whatsapp.com/send?phone={num_whats}&text={txt_encoded}" if num_whats else f"https://api.whatsapp.com/send?text={txt_encoded}"
+                    link_email = f"mailto:{contato_in if '@' in contato_in else ''}?subject={urllib.parse.quote('Seu Resumo Astrológico | Astrologia Consciente')}&body={txt_encoded}"
+
+                    col_btn1, col_btn2, col_btn3 = st.columns(3)
+                    with col_btn1:
+                        if pdf_bytes:
+                            st.download_button(
+                                label="📥 Baixar PDF Completo",
+                                data=pdf_bytes,
+                                file_name=f"Relatorio_{nome.replace(' ','_')}.pdf",
+                                mime="application/pdf",
+                                use_container_width=True
+                            )
+                    with col_btn2:
+                        st.link_button("📲 Salvar no WhatsApp", link_whatsapp, use_container_width=True)
+                    with col_btn3:
+                        st.link_button("✉️ Enviar para meu E-mail", link_email, use_container_width=True)
 
                     st.markdown("---")
                     st.markdown(f"### 📅 Projeção dos 9 Ponteiros (12 Meses a partir de {DATA_ANALISE.strftime('%d/%m/%Y')})")
@@ -287,7 +355,7 @@ if btn_gerar:
                         st.success("Ensino e Expansão: Sol e Vênus favorecem alianças sólidas.")
                         st.info("Orientação: Momento ideal para difundir a Astrologia Consciente.")
                 else:
-                    st.warning("👆 Digite o seu WhatsApp ou E-mail no campo acima para libertar a projeção dos próximos 12 meses e gerar o seu PDF.")
+                    st.warning("👆 Digite o seu WhatsApp ou E-mail no campo acima para desbloquear a projeção dos próximos 12 meses e receber o seu resumo.")
 
         except Exception as e:
             st.error(f"Erro ao processar: {e}")
