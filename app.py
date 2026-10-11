@@ -8,6 +8,7 @@ from kerykeion import AstrologicalSubjectFactory, ChartDataFactory, ChartDrawer
 
 try:
     from reportlab.lib.pagesizes import A4
+    from reportlab.lib.colors import HexColor
     from reportlab.pdfgen import canvas
     REPORTLAB_DISPONIVEL = True
 except ImportError:
@@ -15,7 +16,6 @@ except ImportError:
 
 st.set_page_config(page_title="Astrologia Consciente | Astrolodoug", page_icon="✨", layout="wide")
 
-# Inicialização de memória de sessão para não reiniciar a tela no celular
 if "mapa_gerado" not in st.session_state:
     st.session_state.mapa_gerado = False
 if "contato_salvo" not in st.session_state:
@@ -54,11 +54,25 @@ GLIFOS = dict(SIGNOS)
 REGENTES = {"Áries":["Marte"],"Touro":["Vênus"],"Gêmeos":["Mercúrio"],"Câncer":["Lua"],"Leão":["Sol"],"Virgem":["Mercúrio"],"Libra":["Vênus"],"Escorpião":["Marte","Plutão"],"Sagitário":["Júpiter"],"Capricórnio":["Saturno"],"Aquário":["Saturno","Urano"],"Peixes":["Júpiter","Netuno"]}
 REG_TXT = {"Áries":"Marte","Touro":"Vênus","Gêmeos":"Mercúrio","Câncer":"Lua","Leão":"Sol","Virgem":"Mercúrio","Libra":"Vênus","Escorpião":"Marte e Plutão","Sagitário":"Júpiter","Capricórnio":"Saturno","Aquário":"Saturno e Urano","Peixes":"Júpiter e Netuno"}
 
-# Regra de Orbes das Casas
 ORBES_CASAS = {
     1: 10.0, 4: 10.0, 7: 10.0, 10: 10.0,
     2: 5.0,  5: 5.0,  8: 5.0,  11: 5.0,
     3: 3.0,  6: 3.0,  9: 3.0,  12: 3.0
+}
+
+POTENCIAL_CASAS = {
+    1: "Liderança nata, autonomia e pioneirismo no desenvolvimento da própria identidade.",
+    2: "Capacidade de estruturação financeira, gestão de recursos e monetização de talentos.",
+    3: "Poder de comunicação, articulação estratégica, ensino e criação de redes sociais.",
+    4: "Construção de bases emocionais e familiares sólidas, imobiliário e valorização de raízes.",
+    5: "Expressão criativa genuína, magnetismo pessoal, autoridade autoral e capacidade empreendedora.",
+    6: "Aperfeiçoamento contínuo, domínio de técnicas refinadas, método e gestão da rotina.",
+    7: "Habilidade diplomática para fechar parcerias estratégicas, contratos e negociações.",
+    8: "Poder de transformação profunda, superação de crises e gestão de investimentos partilhados.",
+    9: "Visão filosófica ampla, expansão acadêmica, internacionalização e transmissão de sabedoria.",
+    10: "Construção de autoridade profissional, liderança pública, reputação e legado de carreira.",
+    11: "Articulação de grandes projetos coletivos, impacto comunitário e visão de futuro inovadora.",
+    12: "Sensibilidade intuitiva refinada, compreensão psíquica e talento para atuar nos bastidores."
 }
 
 CIDADES_PADRAO = [
@@ -116,52 +130,182 @@ def svg_mandala(subj):
         return None
 
 def seguro_latin(t):
-    return str(t).encode('latin-1', 'replace').decode('latin-1')
+    subst = {
+        'Á':'A','À':'A','Ã':'A','Â':'A','É':'E','Ê':'E','Í':'I','Ó':'O','Ô':'O','Õ':'O','Ú':'U',
+        'á':'a','à':'a','ã':'a','â':'a','é':'e','ê':'e','í':'i','ó':'o','ô':'o','õ':'o','ú':'u',
+        'ç':'c','Ç':'C','º':'o','ª':'a'
+    }
+    texto = str(t)
+    for k, v in subst.items():
+        texto = texto.replace(k, v)
+    return texto.encode('latin-1', 'replace').decode('latin-1')
 
-def fabricar_pdf(nome_c, cid_c, dt_ref, tab_pont_raw, tab_proj_raw):
+def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_pont_raw, tab_proj_raw):
     if not REPORTLAB_DISPONIVEL: return None
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(45, 800, seguro_latin("Astrologia Consciente | Relatório Preditivo"))
-    c.setFont("Helvetica", 10)
-    c.drawString(45, 782, seguro_latin(f"Consulente: {nome_c} | Local: {cid_c}"))
-    c.drawString(45, 768, seguro_latin(f"Data de Referência da Análise: {dt_ref}"))
-    c.drawString(45, 754, seguro_latin("Método: A Dança dos Ponteiros & APRS (Douglas Rosa - @astrolodoug)"))
-    c.line(45, 744, 550, 744)
+    w_page, h_page = A4
 
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(45, 725, seguro_latin("1. Posicionamento Atual dos 9 Ponteiros"))
-    c.setFont("Helvetica", 9)
-    y = 705
-    for item in tab_pont_raw:
-        txt = f"• {item['Ponteiro']}: {item['Pos']} | {item['Reg']}"
-        c.drawString(55, y, seguro_latin(txt))
-        y -= 16
+    cor_escura = HexColor('#1f1b29')
+    cor_ciano = HexColor('#7df9ff')
+    cor_fundo_card = HexColor('#f5f4f9')
+    cor_borda = HexColor('#dcd6f7')
 
-    y -= 10
+    # ========================== PÁGINA 1 ==========================
+    # Topo estilizado
+    c.setFillColor(cor_escura)
+    c.rect(0, h_page - 100, w_page, 100, fill=1, stroke=0)
+    c.setFillColor(cor_ciano)
+    c.rect(0, h_page - 104, w_page, 4, fill=1, stroke=0)
+
+    c.setFillColor(cor_ciano)
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(45, h_page - 42, seguro_latin("ASTROLOGIA CONSCIENTE"))
+    c.setFillColor(HexColor('#ffffff'))
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(45, y, seguro_latin("2. Projeção Preditiva dos Próximos 12 Meses"))
-    y -= 20
+    c.drawString(45, h_page - 62, seguro_latin("A Danca dos Ponteiros | Relatorio Tecnico & Preditivo"))
     c.setFont("Helvetica", 9)
+    c.drawString(45, h_page - 78, seguro_latin("Pesquisa & Metodologia: Douglas Rosa (@astrolodoug)"))
+
+    # Card do Consulente
+    c.setFillColor(cor_fundo_card)
+    c.setStrokeColor(cor_borda)
+    c.roundRect(40, h_page - 170, w_page - 80, 55, 6, fill=1, stroke=1)
+    c.setFillColor(cor_escura)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(55, h_page - 130, seguro_latin(f"Consulente: {nome_c}"))
+    c.setFont("Helvetica", 9)
+    c.drawString(55, h_page - 146, seguro_latin(f"Local de Nascimento: {cid_c}"))
+    c.drawString(320, h_page - 146, seguro_latin(f"Data de Referencia: {dt_ref}"))
+
+    # Tríade Natal & Área de Maior Potencial
+    c.setFont("Helvetica-Bold", 12)
+    c.setFillColor(cor_escura)
+    c.drawString(45, h_page - 195, seguro_latin("1. Sintese da Matriz Natal & Eixo de Maior Potencial"))
+    c.line(45, h_page - 200, w_page - 45, h_page - 200)
+
+    # Box Tríade
+    c.setFillColor(cor_fundo_card)
+    c.roundRect(40, h_page - 265, w_page - 80, 55, 6, fill=1, stroke=1)
+    c.setFillColor(cor_escura)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(55, h_page - 225, seguro_latin(f"• Sol Natal: {triade_info['sol']}"))
+    c.drawString(55, h_page - 240, seguro_latin(f"• Lua Natal: {triade_info['lua']}"))
+    c.drawString(55, h_page - 255, seguro_latin(f"• Ascendente: {triade_info['asc']}"))
+
+    # Box Potencial de Vida
+    c.setFillColor(HexColor('#2b263b'))
+    c.roundRect(40, h_page - 345, w_page - 80, 70, 6, fill=1, stroke=0)
+    c.setFillColor(cor_ciano)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(55, h_page - 290, seguro_latin("AREA DE MAIOR VOCACAO & POTENCIAL DO MAPA:"))
+    c.setFillColor(HexColor('#f0f0f0'))
+    c.setFont("Helvetica", 9)
+    c.drawString(55, h_page - 310, seguro_latin(f"Setor em Evidencia: {pot_texto['titulo']}"))
+    c.drawString(55, h_page - 326, seguro_latin(f"{pot_texto['descricao'][:85]}"))
+    c.drawString(55, h_page - 338, seguro_latin(f"{pot_texto['descricao'][85:170]}"))
+
+    # Seção 2: Ponteiros Atuais
+    c.setFont("Helvetica-Bold", 12)
+    c.setFillColor(cor_escura)
+    c.drawString(45, h_page - 370, seguro_latin("2. Posicionamento dos 9 Ponteiros Ativos no Momento"))
+    c.line(45, h_page - 375, w_page - 45, h_page - 375)
+
+    y_p = h_page - 395
+    c.setFont("Helvetica", 8.5)
+    for it in tab_pont_raw:
+        c.setFillColor(cor_escura)
+        txt = f"• {it['Ponteiro']}: {it['Pos']}  |  {it['Reg']}"
+        c.drawString(50, y_p, seguro_latin(txt))
+        y_p -= 18
+
+    # Rodapé Pág 1
+    c.setStrokeColor(cor_borda)
+    c.line(45, 45, w_page - 45, 45)
+    c.setFont("Helvetica", 8)
+    c.setFillColor(HexColor('#666666'))
+    c.drawString(45, 32, seguro_latin("Astrologia Consciente | Douglas Rosa (@astrolodoug) - WhatsApp: (11) 97711-7024"))
+    c.drawRightString(w_page - 45, 32, seguro_latin("Pagina 1 de 2"))
+
+    c.showPage()
+
+    # ========================== PÁGINA 2 ==========================
+    # Header menor
+    c.setFillColor(cor_escura)
+    c.rect(0, h_page - 55, w_page, 55, fill=1, stroke=0)
+    c.setFillColor(cor_ciano)
+    c.rect(0, h_page - 58, w_page, 3, fill=1, stroke=0)
+    c.setFillColor(cor_ciano)
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(45, h_page - 34, seguro_latin("CRONOGRAMA PREDITIVO DOS PROXIMOS 12 MESES & DIRECIONAMENTO"))
+
+    # Seção 3: Ativações dos 12 Meses
+    c.setFont("Helvetica-Bold", 12)
+    c.setFillColor(cor_escura)
+    c.drawString(45, h_page - 80, seguro_latin("3. Projecao dos 9 Ponteiros & Gatilhos no Tempo"))
+    c.line(45, h_page - 85, w_page - 45, h_page - 85)
+
+    y_f = h_page - 105
+    c.setFont("Helvetica", 8.5)
     for p in tab_proj_raw:
         txt_proj = f"• {p['Data']}: {p['Ponteiro']} em {p['Aspecto']} ({p['Regência']})"
-        c.drawString(55, y, seguro_latin(txt_proj))
-        y -= 16
+        c.drawString(50, y_f, seguro_latin(txt_proj))
+        y_f -= 17
 
-    y -= 15
-    c.line(45, y, 550, y)
-    y -= 20
+    # Seção 4: Guia Didático
+    c.setFont("Helvetica-Bold", 12)
+    c.setFillColor(cor_escura)
+    c.drawString(45, y_f - 15, seguro_latin("4. Guia Didatico: O Que Esperar Deste Periodo"))
+    c.line(45, y_f - 20, w_page - 45, y_f - 20)
+
+    y_f -= 35
+    c.setFillColor(cor_fundo_card)
+    c.setStrokeColor(cor_borda)
+    c.roundRect(40, y_f - 95, w_page - 80, 100, 6, fill=1, stroke=1)
+    
+    c.setFillColor(cor_escura)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(55, y_f - 12, seguro_latin("• Setores de Rigor e Maturidade (Saturno/Netuno):"))
+    c.setFont("Helvetica", 8.5)
+    c.drawString(65, y_f - 26, seguro_latin("Exigem método, limites claros e paciência. Toda tensão aponta onde as ilusões devem ceder"))
+    c.drawString(65, y_f - 38, seguro_latin("lugar a estrutura profissional duradoura."))
+    
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(55, y_f - 56, seguro_latin("• Janelas de Expansao e Fluxo (Jupiter/Plutao):"))
+    c.setFont("Helvetica", 8.5)
+    c.drawString(65, y_f - 70, seguro_latin("Favorecem o reconhecimento do seu trabalho, alianças estratégicas e visibilidade."))
+    c.drawString(65, y_f - 82, seguro_latin("Aproveite essas datas para iniciar projetos ou lançamentos."))
+
+    # Seção 5: Dedicatória Especial
+    y_ded = y_f - 125
     c.setFont("Helvetica-Bold", 11)
-    c.drawString(45, y, seguro_latin("Direcionamento Estratégico:"))
-    y -= 16
-    c.setFont("Helvetica-Oblique", 9)
-    c.drawString(45, y, seguro_latin("• Saturno e tensões apontam os setores de rigor e maturidade necessária."))
-    y -= 14
-    c.drawString(45, y, seguro_latin("• Júpiter e Plutão sinalizam janelas de expansão e visibilidade profissional."))
-    y -= 25
-    c.setFont("Helvetica-Bold", 10)
-    c.drawString(45, y, seguro_latin("Atendimentos e Estudos: WhatsApp (11) 97711-7024 | Instagram @astrolodoug"))
+    c.setFillColor(cor_escura)
+    c.drawString(45, y_ded, seguro_latin("5. Dedicatoria & Mensagem Final"))
+    c.line(45, y_ded - 5, w_page - 45, y_ded - 5)
+
+    c.setFillColor(HexColor('#2b263b'))
+    c.roundRect(40, y_ded - 110, w_page - 80, 95, 6, fill=1, stroke=0)
+    c.setFillColor(cor_ciano)
+    c.setFont("Helvetica-Bold", 9.5)
+    c.drawString(55, y_ded - 25, seguro_latin("Uma mensagem de Douglas Rosa (@astrolodoug) para voce:"))
+    c.setFillColor(HexColor('#f0f0f0'))
+    c.setFont("Helvetica-Oblique", 8.5)
+    c.drawString(55, y_ded - 42, seguro_latin("\"O ceu nao determina o seu destino de forma fatalista: ele estabelece o compasso"))
+    c.drawString(55, y_ded - 54, seguro_latin("exato do tempo. A Danca dos Ponteiros existe para que voce tome as redeas do seu"))
+    c.drawString(55, y_ded - 66, seguro_latin("proprio relogio e conduza as transformacoes com total consciencia e estrategia.\""))
+
+    c.setFillColor(cor_ciano)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(55, y_ded - 88, seguro_latin("Agendamentos e Cursos: Instagram @astrolodoug | WhatsApp: (11) 97711-7024"))
+
+    # Rodapé Pág 2
+    c.setStrokeColor(cor_borda)
+    c.line(45, 45, w_page - 45, 45)
+    c.setFont("Helvetica", 8)
+    c.setFillColor(HexColor('#666666'))
+    c.drawString(45, 32, seguro_latin("Astrologia Consciente | Douglas Rosa (@astrolodoug) - Direitos Reservados"))
+    c.drawRightString(w_page - 45, 32, seguro_latin("Pagina 2 de 2"))
+
     c.save()
     buf.seek(0)
     return buf.getvalue()
@@ -240,9 +384,11 @@ if st.session_state.mapa_gerado:
                 planetas_dados = [("Sol", sujeito.sun), ("Lua", sujeito.moon), ("Mercúrio", sujeito.mercury), ("Vênus", sujeito.venus), ("Marte", sujeito.mars), ("Júpiter", sujeito.jupiter), ("Saturno", sujeito.saturn), ("Urano", sujeito.uranus), ("Netuno", sujeito.neptune), ("Plutão", sujeito.pluto)]
                 
                 tab_pl = []
+                mapa_casas_planetas = {}
                 for pn, po in planetas_dados:
                     p_abs = float(obter_dado(po, 'abs_pos', 0.0))
                     num_casa, por_orbe, orbe_val = calc_casa_orbe(p_abs, cuspides_abs)
+                    mapa_casas_planetas[pn] = num_casa
                     rotulo_casa = f"{num_casa}ª Casa (orbe de {int(orbe_val)}°)" if por_orbe else f"{num_casa}ª Casa"
                     pos_p = float(obter_dado(po, 'position', 0.0))
                     tab_pl.append({
@@ -256,6 +402,13 @@ if st.session_state.mapa_gerado:
                 st.markdown("### 🪐 Posicionamentos Natais nas Casas (com Orbes de Cúspides)")
                 st.caption("ℹ️ Orbes aplicadas: 10° antes das Casas Angulares (1, 4, 7, 10) | 5° antes das Sucedentes (2, 5, 8, 11) | 3° antes das Cadentes (3, 6, 9, 12).")
                 st.table(tab_pl)
+
+                # Identificação de Maior Potencial de Vida
+                casa_destaque = mapa_casas_planetas.get("Sol", 10)
+                potencial_info = {
+                    "titulo": f"{casa_destaque}ª Casa Zodiacal",
+                    "descricao": POTENCIAL_CASAS.get(casa_destaque, "Foco na consolidação de projetos e autoridade pessoal.")
+                }
 
                 def reg_de(p):
                     c = casas_p.get(p, [])
@@ -279,12 +432,10 @@ if st.session_state.mapa_gerado:
                 proj_pont = [(15,"Ponteiro de Mercúrio","Conjunção","Sol Natal","Sol"),(45,"Ponteiro de Vênus","Sextil","Lua Natal","Lua"),(90,"Ponteiro Solar","Quadratura","Marte Natal","Marte"),(150,"Ponteiro de Marte","Trígono","Meio do Céu","Sol"),(210,"Ponteiro de Júpiter","Oposição","Vênus Natal","Vênus"),(270,"Ponteiro de Saturno","Sextil","Ascendente","Marte"),(320,"Ponteiro de Urano","Trígono","Mercúrio Natal","Mercúrio"),(350,"Ponteiro de Netuno","Conjunção","Saturno Natal","Saturno")]
                 tab_fp = [{"Data": (DATA_ANALISE + timedelta(days=d)).strftime('%d/%m/%Y'), "Ponteiro": pt, "Aspecto": f"{asp} com {alvo}", "Regência": reg_de(p)} for d, pt, asp, alvo, p in proj_pont]
 
-                # =======================================================
-                # PORTAL DE CAPTAÇÃO E ENVIO MULTICANAL COM BOTÃO DE AÇÃO
-                # =======================================================
+                # Portal de Captura & Entrega
                 st.markdown("---")
                 st.markdown("## 🔒 Desbloqueie a Projeção de 12 Meses & Receba o seu Resumo")
-                st.info("Insira o seu WhatsApp ou E-mail e clique em **'Confirmar e Liberar'** para desbloquear o relatório e enviá-lo diretamente:")
+                st.info("Insira o seu WhatsApp ou E-mail e clique em **'Confirmar e Liberar'** para baixar o novo relatório estilizado em PDF ou recebê-lo via mensagem:")
 
                 c_lead1, c_lead2 = st.columns([3, 1])
                 contato_in = c_lead1.text_input(
@@ -293,7 +444,6 @@ if st.session_state.mapa_gerado:
                     placeholder="ex: 11999998888 ou seu@email.com"
                 )
                 
-                # BOTÃO VISÍVEL NO ECRÃ PARA CONFIRMAÇÃO IMEDIATA NO TELEMÓVEL
                 btn_confirmar_contato = c_lead2.button("🔓 Confirmar e Liberar", use_container_width=True)
 
                 if (btn_confirmar_contato or contato_in) and contato_in.strip():
@@ -307,16 +457,26 @@ if st.session_state.mapa_gerado:
                         pass
 
                     tab_pont_pdf = [{"Ponteiro": it["Ponteiro"], "Pos": it["Posição Atual"], "Reg": it["Regência Ativada"]} for it in tab_pont]
-                    pdf_bytes = fabricar_pdf(nome, cidade, DATA_ANALISE.strftime('%d/%m/%Y'), tab_pont_pdf, tab_fp)
+                    
+                    triade_resumo = {
+                        "sol": f"{sujeito.sun['position']:.2f}° {nome_sig(sujeito.sun['sign'])} (Casa {mapa_casas_planetas.get('Sol',1)})",
+                        "lua": f"{sujeito.moon['position']:.2f}° {nome_sig(sujeito.moon['sign'])} (Casa {mapa_casas_planetas.get('Lua',1)})",
+                        "asc": f"{sujeito.first_house['position']:.2f}° {nome_sig(sujeito.first_house['sign'])} (1ª Casa)"
+                    }
 
-                    st.success(f"✅ Contacto registado: **{st.session_state.contato_salvo}**! Escolha abaixo como deseja receber ou enviar o seu resumo:")
+                    pdf_bytes = fabricar_pdf_estilizado(
+                        nome, cidade, DATA_ANALISE.strftime('%d/%m/%Y'),
+                        triade_resumo, potencial_info, tab_pont_pdf, tab_fp
+                    )
 
-                    # Mensagem personalizada direcionada a Douglas Rosa
+                    st.success(f"✅ Contacto registado: **{st.session_state.contato_salvo}**! Seu relatório de alto padrão foi gerado:")
+
                     msg_txt = f"Olá Douglas Rosa (@astrolodoug)!\n\n"
                     msg_txt += f"Gerei meu mapa na Astrologia Consciente:\n"
                     msg_txt += f"👤 *Consulente:* {nome} ({cidade})\n"
                     msg_txt += f"📱 *Meu Contato:* {st.session_state.contato_salvo}\n"
                     msg_txt += f"📅 *Data Base:* {DATA_ANALISE.strftime('%d/%m/%Y')}\n\n"
+                    msg_txt += f"🌟 *Área de Maior Potencial:* {potencial_info['titulo']}\n\n"
                     msg_txt += "🔭 *Ponteiros Ativos em Destaque:*\n"
                     for p_it in tab_pont[:4]:
                         msg_txt += f"• {p_it['Ponteiro']}: {p_it['Posição Atual']}\n"
@@ -326,8 +486,6 @@ if st.session_state.mapa_gerado:
                     msg_txt += "\nGostaria de entender melhor essas ativações e agendar uma análise aprofundada!"
 
                     txt_encoded = urllib.parse.quote(msg_txt)
-                    
-                    # Links oficiais direcionados a Douglas Rosa
                     link_whats_doug = f"https://api.whatsapp.com/send?phone=5511977117024&text={txt_encoded}"
                     link_mail_doug = f"mailto:doug.douglas.santos@gmail.com?subject={urllib.parse.quote(f'Resumo Astrológico | {nome} ({cidade})')}&body={txt_encoded}"
 
@@ -335,9 +493,9 @@ if st.session_state.mapa_gerado:
                     with col_btn1:
                         if pdf_bytes:
                             st.download_button(
-                                label="📥 Baixar PDF Direto",
+                                label="📥 Baixar PDF Estilizado",
                                 data=pdf_bytes,
-                                file_name=f"Relatorio_{nome.replace(' ','_')}.pdf",
+                                file_name=f"Relatorio_Astrologia_Consciente_{nome.replace(' ','_')}.pdf",
                                 mime="application/pdf",
                                 use_container_width=True
                             )
