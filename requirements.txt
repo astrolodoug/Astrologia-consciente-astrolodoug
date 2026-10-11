@@ -1,0 +1,6 @@
+streamlit
+kerykeion
+geopy
+timezonefinder
+pytz
+reportlab
