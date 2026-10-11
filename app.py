@@ -85,16 +85,48 @@ ESTADOS_BR = [
     "AC - Acre", "AP - Amapá", "RR - Roraima"
 ]
 
-@st.cache_data(ttl=86400)
+FALLBACK_CAPITAIS = {
+    "SP": ["São Paulo", "Campinas", "Guarulhos", "São Bernardo do Campo", "Santo André", "Osasco", "Santos", "Ribeirão Preto", "São José dos Campos", "Sorocaba"],
+    "RJ": ["Rio de Janeiro", "Niterói", "São Gonçalo", "Duque de Caxias", "Nova Iguaçu", "Campos dos Goytacazes", "Petrópolis", "Volta Redonda"],
+    "MG": ["Belo Horizonte", "Uberlândia", "Contagem", "Juiz de Fora", "Betim", "Montes Claros", "Ribeirão das Neves", "Uberaba"],
+    "BA": ["Salvador", "Feira de Santana", "Vitória da Conquista", "Camaçari", "Itabuna", "Juazeiro", "Ilhéus", "Lauro de Freitas"],
+    "PR": ["Curitiba", "Londrina", "Maringá", "Ponta Grossa", "Cascavel", "São José dos Pinhais", "Foz do Iguaçu"],
+    "RS": ["Porto Alegre", "Caxias do Sul", "Canoas", "Pelotas", "Santa Maria", "Gravataí", "Novo Hamburgo"],
+    "PE": ["Recife", "Jaboatão dos Guararapes", "Olinda", "Caruaru", "Petrolina", "Paulista", "Cabo de Santo Agostinho"],
+    "CE": ["Fortaleza", "Caucaia", "Juazeiro do Norte", "Maracanaú", "Sobral", "Crato", "Itapipoca"],
+    "PA": ["Belém", "Ananindeua", "Santarém", "Marabá", "Parauapebas", "Castanhal"],
+    "SC": ["Florianópolis", "Joinville", "Blumenau", "São José", "Chapecó", "Criciúma", "Itajaí"],
+    "GO": ["Goiânia", "Aparecida de Goiânia", "Anápolis", "Rio Verde", "Águas Lindas de Goiás", "Luziânia"],
+    "MA": ["São Luís", "Imperatriz", "São José de Ribamar", "Timon", "Caxias"],
+    "AM": ["Manaus", "Parintins", "Itacoatiara", "Manacapuru", "Coari"],
+    "ES": ["Vitória", "Vila Velha", "Serra", "Cariacica", "Cachoeiro de Itapemirim", "Linhares"],
+    "PB": ["João Pessoa", "Campina Grande", "Santa Rita", "Patos", "Bayeux"],
+    "RN": ["Natal", "Mossoró", "Parnamirim", "São Gonçalo do Amarante", "Macaíba"],
+    "MT": ["Cuiabá", "Várzea Grande", "Rondonópolis", "Sinop", "Tangará da Serra"],
+    "AL": ["Maceió", "Arapiraca", "Rio Largo", "Palmeira dos Índios"],
+    "PI": ["Teresina", "Parnaíba", "Picos", "Piripiri"],
+    "DF": ["Brasília"],
+    "MS": ["Campo Grande", "Dourados", "Três Lagoas", "Corumbá"],
+    "SE": ["Aracaju", "Nossa Senhora do Socorro", "Lagarto", "Itabaiana"],
+    "RO": ["Porto Velho", "Ji-Paraná", "Ariquemes", "Vilhena"],
+    "TO": ["Palmas", "Araguaína", "Gurupi", "Porto Nacional"],
+    "AC": ["Rio Branco", "Cruzeiro do Sul", "Sena Madureira"],
+    "AP": ["Macapá", "Santana", "Laranjal do Jari"],
+    "RR": ["Boa Vista", "Rorainópolis", "Caracaraí"]
+}
+
+@st.cache_data(ttl=86400, show_spinner=False)
 def carregar_municipios_ibge(sigla_uf):
     try:
         url = f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{sigla_uf}/municipios?orderBy=nome"
         req = urllib.request.Request(url, headers={'User-Agent': 'AstrologiaConsciente/1.0'})
-        with urllib.request.urlopen(req, timeout=6) as resp:
+        with urllib.request.urlopen(req, timeout=4) as resp:
             dados = json.loads(resp.read().decode('utf-8'))
-            return [m['nome'] for m in dados]
+            if dados and isinstance(dados, list):
+                return [m['nome'] for m in dados]
     except Exception:
-        return []
+        pass
+    return FALLBACK_CAPITAIS.get(sigla_uf, ["Capital"])
 
 def obter_dado(obj, chave, padrao=0.0):
     if isinstance(obj, dict): return obj.get(chave, padrao)
@@ -312,24 +344,39 @@ st.markdown("### A Dança dos Ponteiros: Relatório Preditivo e Mandala")
 st.sidebar.header("Dados do Consulente")
 nome = st.sidebar.text_input("Nome Completo", "Douglas Rosa")
 
-# SELETOR OFICIAL DE MUNICÍPIOS (IBGE - 100% DAS CIDADES DO BRASIL)
+# LISTAS SUSPENSAS DINÂMICAS EM CASCATA (ESTADO ➔ MUNICÍPIO)
 st.sidebar.markdown("---")
 st.sidebar.subheader("📍 Local de Nascimento")
-origem_tipo = st.sidebar.radio("Selecione a Origem:", ["Municípios do Brasil (Base IBGE)", "Outro País / Digitação Livre"], index=0)
+origem_tipo = st.sidebar.radio("País de Origem:", ["Brasil (Municípios IBGE)", "Outro País (Digitar Livre)"], index=0)
 
-if origem_tipo == "Municípios do Brasil (Base IBGE)":
-    uf_escolhida = st.sidebar.selectbox("1. Estado (UF):", ESTADOS_BR, index=0)
+if origem_tipo == "Brasil (Municípios IBGE)":
+    # 1. LISTA SUSPENSA DO ESTADO
+    uf_escolhida = st.sidebar.selectbox("1. Escolha o Estado (UF):", ESTADOS_BR, index=0)
     sigla_uf = uf_escolhida.split(" - ")[0]
     
+    # 2. CARREGAMENTO DOS MUNICÍPIOS DAQUELE ESTADO
     lista_cidades_uf = carregar_municipios_ibge(sigla_uf)
-    if lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("São Paulo") if "São Paulo" in lista_cidades_uf else 0
-        mun_escolhido = st.sidebar.selectbox("2. Município:", lista_cidades_uf, index=idx_padrao)
-        cidade = f"{mun_escolhido}, {sigla_uf}, Brasil"
-    else:
-        cidade = st.sidebar.text_input("Município:", value=f"São Paulo, {sigla_uf}, Brasil")
+    
+    idx_padrao = 0
+    if sigla_uf == "SP" and "São Paulo" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("São Paulo")
+    elif sigla_uf == "RJ" and "Rio de Janeiro" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Rio de Janeiro")
+    elif sigla_uf == "MG" and "Belo Horizonte" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Belo Horizonte")
+    elif sigla_uf == "BA" and "Salvador" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Salvador")
+    
+    # 3. LISTA SUSPENSA DO MUNICÍPIO COM FILTRO POR DIGITAÇÃO
+    mun_escolhido = st.sidebar.selectbox(
+        "2. Escolha o Município:",
+        options=lista_cidades_uf,
+        index=idx_padrao,
+        key=f"mun_{sigla_uf}"
+    )
+    cidade = f"{mun_escolhido}, {sigla_uf}, Brasil"
 else:
-    cidade = st.sidebar.text_input("Digite Cidade, Estado/País:", value="Lisboa, Portugal")
+    cidade = st.sidebar.text_input("Digite Cidade e País:", value="Lisboa, Portugal")
 
 st.sidebar.markdown("---")
 ano = st.sidebar.number_input("Ano", 1900, 2100, 1989)
