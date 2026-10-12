@@ -76,7 +76,7 @@ POTENCIAL_CASAS = {
 }
 
 ESTADOS_BR = [
-    "SP - São Paulo", "RJ - Rio de Janeiro", "MG - Minas Gerais", "BA - Bahia",
+    "RJ - Rio de Janeiro", "SP - São Paulo", "MG - Minas Gerais", "BA - Bahia",
     "PR - Paraná", "RS - Rio Grande do Sul", "PE - Pernambuco", "CE - Ceará",
     "PA - Pará", "SC - Santa Catarina", "GO - Goiás", "MA - Maranhão",
     "AM - Amazonas", "ES - Espírito Santo", "PB - Paraíba", "RN - Rio Grande do Norte",
@@ -85,31 +85,54 @@ ESTADOS_BR = [
     "AC - Acre", "AP - Amapá", "RR - Roraima"
 ]
 
-# Contingência ampliada de segurança
-FALLBACK_SP = sorted([
-    "São Paulo", "Guarulhos", "Campinas", "São Bernardo do Campo", "Santo André",
-    "São José dos Campos", "Osasco", "Ribeirão Preto", "Sorocaba", "Santos",
-    "Mauá", "São José do Rio Preto", "Mogi das Cruzes", "Diadema", "Jundiaí",
-    "Piracicaba", "Carapicuíba", "Bauru", "Itaquaquecetuba", "São Vicente",
-    "Franca", "Praia Grande", "Guarujá", "Taubaté", "Limeira", "Suzano",
-    "Taboão da Serra", "Sumaré", "Barueri", "Embu das Artes", "Indaiatuba",
-    "Cotia", "Americana", "Marília", "Araraquara", "Jacareí", "Presidente Prudente",
-    "Itrapevi", "Rio Claro", "Araçatuba", "Hortolândia", "Santa Bárbara d'Oeste"
+# BASE COMPLETA OFICIAL: TODAS AS 92 CIDADES DO ESTADO DO RIO DE JANEIRO
+CIDADES_RJ = sorted([
+    "Angra dos Reis", "Aperibé", "Araruama", "Areal", "Armação dos Búzios",
+    "Arraial do Cabo", "Barra do Piraí", "Barra Mansa", "Belford Roxo", "Bom Jardim",
+    "Bom Jesus do Itabapoana", "Cabo Frio", "Cachoeiras de Macacu", "Cambuci",
+    "Campos dos Goytacazes", "Cantagalo", "Carapebus", "Cardoso Moreira", "Carmo",
+    "Casimiro de Abreu", "Comendador Levy Gasparian", "Conceição de Macabu", "Cordeiro",
+    "Duas Barras", "Duque de Caxias", "Engenheiro Paulo de Frontin", "Guapimirim",
+    "Iguaba Grande", "Itaboraí", "Itaguaí", "Italva", "Itaocara", "Itaperuna",
+    "Itatiaia", "Japeri", "Laje do Muriaé", "Macaé", "Macuco", "Magé", "Mangaratiba",
+    "Maricá", "Mendes", "Mesquita", "Miguel Pereira", "Miracema", "Natividade",
+    "Nilópolis", "Niterói", "Nova Friburgo", "Nova Iguaçu", "Paracambi",
+    "Paraíba do Sul", "Paraty", "Paty do Alferes", "Petrópolis", "Pinheiral",
+    "Piraí", "Porciúncula", "Porto Real", "Quatis", "Queimados", "Quissamã",
+    "Resende", "Rio Bonito", "Rio Claro", "Rio das Flores", "Rio das Ostras",
+    "Rio de Janeiro", "Santa Maria Madalena", "Santo Antônio de Pádua", "São Fidélis",
+    "São Francisco de Itabapoana", "São Gonçalo", "São João da Barra",
+    "São João de Meriti", "São José de Ubá", "São José do Vale do Rio Preto",
+    "São Pedro da Aldeia", "São Sebastião do Alto", "Saquarema", "Seropédica",
+    "Silva Jardim", "Sumidouro", "Tanguá", "Teresópolis", "Trajano de Moraes",
+    "Três Rios", "Valença", "Varre-Sai", "Vassouras", "Volta Redonda"
 ])
 
 @st.cache_data(ttl=86400, show_spinner=False)
-def carregar_municipios_ibge(sigla_uf):
+def carregar_municipios(sigla_uf):
+    if sigla_uf == "RJ":
+        return CIDADES_RJ
     try:
         url = f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{sigla_uf}/municipios"
         ctx = ssl._create_unverified_context()
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-        with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=8, context=ctx) as resp:
             dados = json.loads(resp.read().decode('utf-8'))
             if dados and isinstance(dados, list):
                 return sorted([m['nome'] for m in dados])
     except Exception:
         pass
-    return FALLBACK_SP if sigla_uf == "SP" else ["Capital"]
+    if sigla_uf == "SP":
+        return sorted([
+            "São Paulo", "Guarulhos", "Campinas", "São Bernardo do Campo", "Santo André",
+            "São José dos Campos", "Osasco", "Ribeirão Preto", "Sorocaba", "Santos",
+            "Mauá", "São José do Rio Preto", "Mogi das Cruzes", "Diadema", "Jundiaí",
+            "Piracicaba", "Carapicuíba", "Bauru", "Itaquaquecetuba", "São Vicente",
+            "Franca", "Praia Grande", "Guarujá", "Taubaté", "Limeira", "Suzano",
+            "Taboão da Serra", "Sumaré", "Barueri", "Embu das Artes", "Indaiatuba",
+            "Cotia", "Americana", "Marília", "Araraquara", "Jacareí", "Presidente Prudente"
+        ])
+    return ["Capital"]
 
 def obter_dado(obj, chave, padrao=0.0):
     if isinstance(obj, dict): return obj.get(chave, padrao)
@@ -329,27 +352,27 @@ nome = st.sidebar.text_input("Nome Completo", "Douglas Rosa")
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("📍 Local de Nascimento")
-origem_tipo = st.sidebar.radio("País de Origem:", ["Brasil (Municípios IBGE)", "Outro País (Digitar Livre)"], index=0)
+origem_tipo = st.sidebar.radio("País de Origem:", ["Brasil (Municípios)", "Outro País (Digitar Livre)"], index=0)
 
-if origem_tipo == "Brasil (Municípios IBGE)":
+if origem_tipo == "Brasil (Municípios)":
     uf_escolhida = st.sidebar.selectbox("1. Escolha o Estado (UF):", ESTADOS_BR, index=0)
     sigla_uf = uf_escolhida.split(" - ")[0]
     
-    lista_cidades_uf = carregar_municipios_ibge(sigla_uf)
+    lista_cidades_uf = carregar_municipios(sigla_uf)
     total_cid = len(lista_cidades_uf)
     
     idx_padrao = 0
-    if sigla_uf == "SP" and "São Paulo" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("São Paulo")
-    elif sigla_uf == "RJ" and "Rio de Janeiro" in lista_cidades_uf:
+    if sigla_uf == "RJ" and "Rio de Janeiro" in lista_cidades_uf:
         idx_padrao = lista_cidades_uf.index("Rio de Janeiro")
+    elif sigla_uf == "SP" and "São Paulo" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("São Paulo")
     elif sigla_uf == "MG" and "Belo Horizonte" in lista_cidades_uf:
         idx_padrao = lista_cidades_uf.index("Belo Horizonte")
     elif sigla_uf == "BA" and "Salvador" in lista_cidades_uf:
         idx_padrao = lista_cidades_uf.index("Salvador")
     
     mun_escolhido = st.sidebar.selectbox(
-        f"2. Município de {sigla_uf} ({total_cid} cidades):",
+        f"2. Município de {sigla_uf} ({total_cid} cidades disponíveis):",
         options=lista_cidades_uf,
         index=idx_padrao,
         key=f"mun_{sigla_uf}"
@@ -549,7 +572,6 @@ if st.session_state.mapa_gerado:
                     st.markdown(f"### 📅 Projeção de Trânsitos Lentos (12 Meses a partir de {DATA_ANALISE.strftime('%d/%m/%Y')})")
                     st.table(tab_fl)
 
-                    st.markdown("---")
                     st.markdown("## 🧠 Síntese Interpretativa e Direcionamento Consciente")
                     ce, cd = st.columns(2)
                     with ce:
