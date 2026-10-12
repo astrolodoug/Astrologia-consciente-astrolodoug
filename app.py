@@ -76,7 +76,7 @@ POTENCIAL_CASAS = {
 }
 
 ESTADOS_BR = [
-    "MG - Minas Gerais", "SP - São Paulo", "RJ - Rio de Janeiro", "BA - Bahia",
+    "BA - Bahia", "SP - São Paulo", "RJ - Rio de Janeiro", "MG - Minas Gerais",
     "PR - Paraná", "RS - Rio Grande do Sul", "PE - Pernambuco", "CE - Ceará",
     "PA - Pará", "SC - Santa Catarina", "GO - Goiás", "MA - Maranhão",
     "AM - Amazonas", "ES - Espírito Santo", "PB - Paraíba", "RN - Rio Grande do Norte",
@@ -84,6 +84,78 @@ ESTADOS_BR = [
     "MS - Mato Grosso do Sul", "SE - Sergipe", "RO - Rondônia", "TO - Tocantins",
     "AC - Acre", "AP - Amapá", "RR - Roraima"
 ]
+
+# BASE COMPLETA: TODAS AS 417 CIDADES DA BAHIA (IBGE)
+CIDADES_BA = sorted(list(set([
+    "Abaíra", "Abaré", "Acajutiba", "Adustina", "Água Fria", "Aiquara", "Alagoinhas", "Alcobaça",
+    "Almadina", "Amargosa", "Amélia Rodrigues", "América Dourada", "Anagé", "Andaraí", "Andorinha",
+    "Angical", "Anguera", "Antas", "Antônio Cardoso", "Antônio Gonçalves", "Aporá", "Apuarema",
+    "Araçás", "Aracatu", "Araci", "Aramari", "Arataca", "Aratuípe", "Aurelino Leal", "Baianópolis",
+    "Baixa Grande", "Banzaê", "Barra", "Barra da Estiva", "Barra do Choça", "Barra do Mendes",
+    "Barra do Rocha", "Barreiras", "Barro Alto", "Barro Preto", "Barrocas", "Belmonte", "Belo Campo",
+    "Biritinga", "Boa Nova", "Boa Vista do Tupim", "Bom Jesus da Lapa", "Bom Jesus da Serra",
+    "Boninal", "Bonito", "Boquira", "Botuporã", "Brejões", "Brejolândia", "Brotas de Macaúbas",
+    "Brumado", "Buerarema", "Buritirama", "Caatiba", "Cabaceiras do Paraguaçu", "Cachoeira",
+    "Caculé", "Caém", "Caetanos", "Caetité", "Cafarnaum", "Cairu", "Caldeirão Grande", "Camacan",
+    "Camaçari", "Camamu", "Campo Alegre de Lourdes", "Campo Formoso", "Canápolis", "Canarana",
+    "Canavieiras", "Candeal", "Candeias", "Candiba", "Cândido Sales", "Cansanção", "Canudos",
+    "Capela do Alto Alegre", "Capim Grosso", "Caraíbas", "Caravelas", "Cardeal da Silva",
+    "Carinhanha", "Casa Nova", "Castro Alves", "Catolândia", "Catu", "Caturama", "Central",
+    "Chorrochó", "Cícero Dantas", "Cipó", "Coaraci", "Cocos", "Conceição da Feira",
+    "Conceição do Almeida", "Conceição do Coité", "Conceição do Jacuípe", "Conde", "Condeúba",
+    "Contendas do Sincorá", "Coração de Maria", "Cordeiros", "Coribe", "Coronel João Sá",
+    "Correntina", "Cotegipe", "Cravolândia", "Crisópolis", "Cristópolis", "Cruz das Almas",
+    "Curaçá", "Dário Meira", "Dias d'Ávila", "Dom Basílio", "Dom Macedo Costa", "Elísio Medrado",
+    "Encruzilhada", "Entre Rios", "Érico Cardoso", "Esplanada", "Euclides da Cunha", "Eunápolis",
+    "Fátima", "Feira da Mata", "Feira de Santana", "Filadélfia", "Firmino Alves", "Floresta Azul",
+    "Formosa do Rio Preto", "Gandu", "Gavião", "Gentio do Ouro", "Glória", "Gongogi",
+    "Governador Mangabeira", "Guajeru", "Guanambi", "Guaratinga", "Heliópolis", "Iaçu",
+    "Ibiassucê", "Ibicaraí", "Ibicoara", "Ibicuí", "Ibipeba", "Ibipitanga", "Ibiquera",
+    "Ibirapitanga", "Ibirapuã", "Ibirataia", "Ibitiara", "Ibititá", "Ibotirama", "Ichu",
+    "Igaporã", "Igrapiúna", "Iguaí", "Ilhéus", "Inhambupe", "Ipecaetá", "Ipiaú", "Ipirá",
+    "Ipupiara", "Irajuba", "Iramaia", "Iraquara", "Irará", "Irecê", "Itabela", "Itaberaba",
+    "Itabuna", "Itacaré", "Itaeté", "Itagi", "Itagibá", "Itagimirim", "Itaguaçu da Bahia",
+    "Itaju do Colônia", "Itajuípe", "Itamaraju", "Itamari", "Itambé", "Itanagra", "Itanhém",
+    "Itaparica", "Itapé", "Itapebi", "Itapetinga", "Itapicuru", "Itapitanga", "Itaquara",
+    "Itarantim", "Itatim", "Itiruçu", "Itiúba", "Itororó", "Ituaçu", "Ituberá", "Iuiú",
+    "Jaborandi", "Jacaraci", "Jacobina", "Jaguaquara", "Jaguarari", "Jaguaripe", "Jandaíra",
+    "Jequié", "Jeremoabo", "Jiquiriçá", "Jitaúna", "João Dourado", "Juazeiro", "Jucuruçu",
+    "Jussara", "Jussari", "Jussiape", "Lafaiete Coutinho", "Lagoa Real", "Laje", "Lajedão",
+    "Lajedinho", "Lajedo do Tabocal", "Lamarão", "Lapão", "Lauro de Freitas", "Lençóis",
+    "Licínio de Almeida", "Livramento de Nossa Senhora", "Luís Eduardo Magalhães", "Macajuba",
+    "Macarani", "Macaúbas", "Macururé", "Madre de Deus", "Maetinga", "Maiquinique", "Mairi",
+    "Malhada", "Malhada de Pedras", "Manoel Vitorino", "Mansidão", "Maracás", "Maragogipe",
+    "Maraú", "Marcionílio Souza", "Mascote", "Mata de São João", "Matina", "Medeiros Neto",
+    "Miguel Calmon", "Milagres", "Mirangaba", "Mirante", "Monte Santo", "Morpará",
+    "Morro do Chapéu", "Mortugaba", "Mucugê", "Mucuri", "Mulungu do Morro", "Mundo Novo",
+    "Muniz Ferreira", "Muquém do São Francisco", "Muritiba", "Mutuípe", "Nilo Peçanha",
+    "Nordestina", "Nova Canaã", "Nova Fátima", "Nova Ibiá", "Nova Itarana", "Nova Redenção",
+    "Nova Soure", "Nova Viçosa", "Novo Horizonte", "Novo Triunfo", "Olindina",
+    "Oliveira dos Brejinhos", "Ouriçangas", "Ourolândia", "Palmas de Monte Alto", "Palmeiras",
+    "Paramirim", "Paratinga", "Paripiranga", "Pau Brasil", "Paulo Afonso", "Pé de Serra",
+    "Pedrão", "Pedro Alexandre", "Piatã", "Pilão Arcado", "Pindaí", "Pindobaçu", "Pintadas",
+    "Piraí do Norte", "Piripá", "Piritiba", "Planaltino", "Planalto", "Poções", "Pojuca",
+    "Ponto Novo", "Porto Seguro", "Prado", "Presidente Dutra", "Presidente Jânio Quadros",
+    "Presidente Tancredo Neves", "Queimadas", "Quijingue", "Quixabeira", "Rafael Jambeiro",
+    "Remanso", "Retirolândia", "Riachão das Neves", "Riachão do Jacuípe", "Riacho de Santana",
+    "Ribeira do Amparo", "Ribeira do Pombal", "Ribeirão do Largo", "Rio de Contas",
+    "Rio do Antônio", "Rio do Pires", "Rio Real", "Rodelas", "Ruy Barbosa", "Salinas da Margarida",
+    "Salvador", "Santa Bárbara", "Santa Brígida", "Santa Cruz Cabrália", "Santa Cruz da Vitória",
+    "Santa Inês", "Santa Luzia", "Santa Maria da Vitória", "Santa Rita de Cássia", "Santa Teresinha",
+    "Santaluz", "Santana", "Santanópolis", "Santo Amaro", "Santo Antônio de Jesus",
+    "Santo Estêvão", "São Desidério", "São Domingos", "São Felipe", "São Félix",
+    "São Félix do Coribe", "São Francisco do Conde", "São Gabriel", "São Gonçalo dos Campos",
+    "São José da Vitória", "São José do Jacuípe", "São Miguel das Matas", "São Sebastião do Passé",
+    "Sapeaçu", "Sátiro Dias", "Saubara", "Saúde", "Seabra", "Sebastião Laranjeiras",
+    "Senhor do Bonfim", "Sento Sé", "Serra do Ramalho", "Serra Dourada", "Serra Preta",
+    "Serrinha", "Serrolândia", "Simões Filho", "Sítio do Mato", "Sítio do Quinto", "Sobradinho",
+    "Souto Soares", "Tabocas do Brejo Velho", "Tanhaçu", "Tanque Novo", "Tanquinho", "Taperoá",
+    "Tapiramutá", "Teixeira de Freitas", "Teodoro Sampaio", "Teofilândia", "Teolândia",
+    "Terra Nova", "Tremedal", "Tucano", "Uauá", "Ubaíra", "Ubaitaba", "Ubatã", "Uibaí",
+    "Umburanas", "Una", "Urandi", "Uruçuca", "Utinga", "Valença", "Valente", "Várzea da Roça",
+    "Várzea do Poço", "Várzea Nova", "Varzedo", "Vera Cruz", "Vereda", "Vitória da Conquista",
+    "Wagner", "Wanderley", "Wenceslau Guimarães", "Xique-Xique"
+])))
 
 CIDADES_RJ = sorted([
     "Angra dos Reis", "Aperibé", "Araruama", "Areal", "Armação dos Búzios",
@@ -119,12 +191,7 @@ CIDADES_MG_BASE = sorted([
     "Timóteo", "Manhuaçu", "Unaí", "Curvelo", "Alfenas", "João Monlevade",
     "Três Corações", "Viçosa", "Cataguases", "Ouro Preto", "Janaúba",
     "São Sebastião do Paraíso", "Januária", "Formiga", "Esmeraldas",
-    "Pedro Leopoldo", "Ponte Nova", "Mariana", "Diamantina", "São Lourenço",
-    "Caxambu", "Tiradentes", "Congonhas", "Araxá", "Frutal", "Campo Belo",
-    "Extrema", "Santa Rita do Sapucaí", "Santos Dumont", "Guaxupé",
-    "Três Marias", "Lagoa Santa", "Bocaiúva", "Leopoldina", "Almenara",
-    "Salinas", "Nanuque", "Capelinha", "Machado", "Oliveira", "Arcos",
-    "Monte Sião", "Andradas", "Cambuí", "Lambari", "Baependi", "Passa Quatro"
+    "Pedro Leopoldo", "Ponte Nova", "Mariana", "Diamantina", "São Lourenço"
 ])
 
 CIDADES_SP_BASE = sorted([
@@ -139,33 +206,30 @@ CIDADES_SP_BASE = sorted([
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def carregar_municipios(sigla_uf):
+    if sigla_uf == "BA":
+        return CIDADES_BA
     if sigla_uf == "RJ":
         return CIDADES_RJ
-    # 1. BrasilAPI (CDN global de alta velocidade)
     try:
         url_bapi = f"https://brasilapi.com.br/api/ibge/municipios/v1/{sigla_uf}"
         ctx = ssl._create_unverified_context()
         req = urllib.request.Request(url_bapi, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=8, context=ctx) as resp:
+        with urllib.request.urlopen(req, timeout=6, context=ctx) as resp:
             dados = json.loads(resp.read().decode('utf-8'))
             if dados and isinstance(dados, list):
                 return sorted([m['nome'] for m in dados])
     except Exception:
         pass
-
-    # 2. Base Oficial do IBGE
     try:
         url_ibge = f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{sigla_uf}/municipios"
         ctx = ssl._create_unverified_context()
         req = urllib.request.Request(url_ibge, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=8, context=ctx) as resp:
+        with urllib.request.urlopen(req, timeout=6, context=ctx) as resp:
             dados = json.loads(resp.read().decode('utf-8'))
             if dados and isinstance(dados, list):
                 return sorted([m['nome'] for m in dados])
     except Exception:
         pass
-
-    # 3. Contingência local
     if sigla_uf == "MG":
         return CIDADES_MG_BASE
     if sigla_uf == "SP":
@@ -400,14 +464,14 @@ if origem_tipo == "Brasil (Municípios)":
     total_cid = len(lista_cidades_uf)
     
     idx_padrao = 0
-    if sigla_uf == "MG" and "Belo Horizonte" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Belo Horizonte")
+    if sigla_uf == "BA" and "Salvador" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Salvador")
     elif sigla_uf == "SP" and "São Paulo" in lista_cidades_uf:
         idx_padrao = lista_cidades_uf.index("São Paulo")
     elif sigla_uf == "RJ" and "Rio de Janeiro" in lista_cidades_uf:
         idx_padrao = lista_cidades_uf.index("Rio de Janeiro")
-    elif sigla_uf == "BA" and "Salvador" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Salvador")
+    elif sigla_uf == "MG" and "Belo Horizonte" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Belo Horizonte")
     
     mun_escolhido = st.sidebar.selectbox(
         f"2. Município de {sigla_uf} ({total_cid} cidades disponíveis):",
