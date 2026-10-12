@@ -76,13 +76,35 @@ POTENCIAL_CASAS = {
 }
 
 ESTADOS_BR = [
-    "PE - Pernambuco", "CE - Ceará", "PA - Pará", "SP - São Paulo", "RJ - Rio de Janeiro",
-    "MG - Minas Gerais", "BA - Bahia", "PR - Paraná", "RS - Rio Grande do Sul",
-    "SC - Santa Catarina", "GO - Goiás", "MA - Maranhão", "AM - Amazonas",
-    "ES - Espírito Santo", "PB - Paraíba", "RN - Rio Grande do Norte", "MT - Mato Grosso",
-    "AL - Alagoas", "PI - Piauí", "DF - Distrito Federal", "MS - Mato Grosso do Sul",
-    "SE - Sergipe", "RO - Rondônia", "TO - Tocantins", "AC - Acre", "AP - Amapá", "RR - Roraima"
+    "AC - Acre", "AP - Amapá", "RR - Roraima", "PE - Pernambuco", "CE - Ceará", "PA - Pará",
+    "SP - São Paulo", "RJ - Rio de Janeiro", "MG - Minas Gerais", "BA - Bahia",
+    "PR - Paraná", "RS - Rio Grande do Sul", "SC - Santa Catarina", "GO - Goiás",
+    "MA - Maranhão", "AM - Amazonas", "ES - Espírito Santo", "PB - Paraíba",
+    "RN - Rio Grande do Norte", "MT - Mato Grosso", "AL - Alagoas", "PI - Piauí",
+    "DF - Distrito Federal", "MS - Mato Grosso do Sul", "SE - Sergipe", "RO - Rondônia", "TO - Tocantins"
 ]
+
+# ACRE (22 CIDADES)
+CIDADES_AC = sorted(list(set([
+    "Acrelândia", "Assis Brasil", "Brasiléia", "Bujari", "Capixaba", "Cruzeiro do Sul",
+    "Epitaciolândia", "Feijó", "Jordão", "Mâncio Lima", "Manoel Urbano", "Marechal Thaumaturgo",
+    "Plácido de Castro", "Porto Acre", "Porto Walter", "Rio Branco", "Rodrigues Alves",
+    "Santa Rosa do Purus", "Sena Madureira", "Senador Guiomard", "Tarauacá", "Xapuri"
+])))
+
+# AMAPÁ (16 CIDADES)
+CIDADES_AP = sorted(list(set([
+    "Amapá", "Calçoene", "Cutias", "Ferreira Gomes", "Itaubal", "Laranjal do Jari",
+    "Macapá", "Mazagão", "Oiapoque", "Pedra Branca do Amapari", "Porto Grande",
+    "Pracuúba", "Santana", "Serra do Navio", "Tartarugalzinho", "Vitória do Jari"
+])))
+
+# RORAIMA (15 CIDADES)
+CIDADES_RR = sorted(list(set([
+    "Alto Alegre", "Amajari", "Boa Vista", "Bonfim", "Cantá", "Caracaraí",
+    "Caroebe", "Iracema", "Mucajaí", "Normandia", "Pacaraima", "Rorainópolis",
+    "São João da Baliza", "São Luiz", "Uiramutã"
+])))
 
 # PERNAMBUCO (185 CIDADES)
 CIDADES_PE = sorted(list(set([
@@ -465,6 +487,12 @@ CIDADES_SP_BASE = sorted([
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def carregar_municipios(sigla_uf):
+    if sigla_uf == "AC":
+        return CIDADES_AC
+    if sigla_uf == "AP":
+        return CIDADES_AP
+    if sigla_uf == "RR":
+        return CIDADES_RR
     if sigla_uf == "PE":
         return CIDADES_PE
     if sigla_uf == "CE":
@@ -733,7 +761,13 @@ if origem_tipo == "Brasil (Municípios)":
     total_cid = len(lista_cidades_uf)
     
     idx_padrao = 0
-    if sigla_uf == "PE" and "Recife" in lista_cidades_uf:
+    if sigla_uf == "AC" and "Rio Branco" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Rio Branco")
+    elif sigla_uf == "AP" and "Macapá" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Macapá")
+    elif sigla_uf == "RR" and "Boa Vista" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Boa Vista")
+    elif sigla_uf == "PE" and "Recife" in lista_cidades_uf:
         idx_padrao = lista_cidades_uf.index("Recife")
     elif sigla_uf == "CE" and "Fortaleza" in lista_cidades_uf:
         idx_padrao = lista_cidades_uf.index("Fortaleza")
