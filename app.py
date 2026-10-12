@@ -76,7 +76,7 @@ POTENCIAL_CASAS = {
 }
 
 ESTADOS_BR = [
-    "RJ - Rio de Janeiro", "SP - São Paulo", "MG - Minas Gerais", "BA - Bahia",
+    "MG - Minas Gerais", "SP - São Paulo", "RJ - Rio de Janeiro", "BA - Bahia",
     "PR - Paraná", "RS - Rio Grande do Sul", "PE - Pernambuco", "CE - Ceará",
     "PA - Pará", "SC - Santa Catarina", "GO - Goiás", "MA - Maranhão",
     "AM - Amazonas", "ES - Espírito Santo", "PB - Paraíba", "RN - Rio Grande do Norte",
@@ -85,7 +85,6 @@ ESTADOS_BR = [
     "AC - Acre", "AP - Amapá", "RR - Roraima"
 ]
 
-# BASE COMPLETA OFICIAL: TODAS AS 92 CIDADES DO ESTADO DO RIO DE JANEIRO
 CIDADES_RJ = sorted([
     "Angra dos Reis", "Aperibé", "Araruama", "Areal", "Armação dos Búzios",
     "Arraial do Cabo", "Barra do Piraí", "Barra Mansa", "Belford Roxo", "Bom Jardim",
@@ -108,30 +107,69 @@ CIDADES_RJ = sorted([
     "Três Rios", "Valença", "Varre-Sai", "Vassouras", "Volta Redonda"
 ])
 
+CIDADES_MG_BASE = sorted([
+    "Belo Horizonte", "Uberlândia", "Contagem", "Juiz de Fora", "Betim",
+    "Montes Claros", "Ribeirão das Neves", "Uberaba", "Governador Valadares",
+    "Ipatinga", "Sete Lagoas", "Divinópolis", "Santa Luzia", "Ibirité",
+    "Poços de Caldas", "Patos de Minas", "Pouso Alegre", "Teófilo Otoni",
+    "Barbacena", "Sabará", "Varginha", "Vespasiano", "Conselheiro Lafaiete",
+    "Itabira", "Araguari", "Ubá", "Passos", "Coronel Fabriciano", "Muriaé",
+    "Ituiutaba", "Lavras", "Itajubá", "Nova Serrana", "Itaúna", "Pará de Minas",
+    "Paracatu", "Caratinga", "Nova Lima", "São João del-Rei", "Patrocínio",
+    "Timóteo", "Manhuaçu", "Unaí", "Curvelo", "Alfenas", "João Monlevade",
+    "Três Corações", "Viçosa", "Cataguases", "Ouro Preto", "Janaúba",
+    "São Sebastião do Paraíso", "Januária", "Formiga", "Esmeraldas",
+    "Pedro Leopoldo", "Ponte Nova", "Mariana", "Diamantina", "São Lourenço",
+    "Caxambu", "Tiradentes", "Congonhas", "Araxá", "Frutal", "Campo Belo",
+    "Extrema", "Santa Rita do Sapucaí", "Santos Dumont", "Guaxupé",
+    "Três Marias", "Lagoa Santa", "Bocaiúva", "Leopoldina", "Almenara",
+    "Salinas", "Nanuque", "Capelinha", "Machado", "Oliveira", "Arcos",
+    "Monte Sião", "Andradas", "Cambuí", "Lambari", "Baependi", "Passa Quatro"
+])
+
+CIDADES_SP_BASE = sorted([
+    "São Paulo", "Guarulhos", "Campinas", "São Bernardo do Campo", "Santo André",
+    "São José dos Campos", "Osasco", "Ribeirão Preto", "Sorocaba", "Santos",
+    "Mauá", "São José do Rio Preto", "Mogi das Cruzes", "Diadema", "Jundiaí",
+    "Piracicaba", "Carapicuíba", "Bauru", "Itaquaquecetuba", "São Vicente",
+    "Franca", "Praia Grande", "Guarujá", "Taubaté", "Limeira", "Suzano",
+    "Taboão da Serra", "Sumaré", "Barueri", "Embu das Artes", "Indaiatuba",
+    "Cotia", "Americana", "Marília", "Araraquara", "Jacareí", "Presidente Prudente"
+])
+
 @st.cache_data(ttl=86400, show_spinner=False)
 def carregar_municipios(sigla_uf):
     if sigla_uf == "RJ":
         return CIDADES_RJ
+    # 1. BrasilAPI (CDN global de alta velocidade)
     try:
-        url = f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{sigla_uf}/municipios"
+        url_bapi = f"https://brasilapi.com.br/api/ibge/municipios/v1/{sigla_uf}"
         ctx = ssl._create_unverified_context()
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        req = urllib.request.Request(url_bapi, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=8, context=ctx) as resp:
             dados = json.loads(resp.read().decode('utf-8'))
             if dados and isinstance(dados, list):
                 return sorted([m['nome'] for m in dados])
     except Exception:
         pass
+
+    # 2. Base Oficial do IBGE
+    try:
+        url_ibge = f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{sigla_uf}/municipios"
+        ctx = ssl._create_unverified_context()
+        req = urllib.request.Request(url_ibge, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=8, context=ctx) as resp:
+            dados = json.loads(resp.read().decode('utf-8'))
+            if dados and isinstance(dados, list):
+                return sorted([m['nome'] for m in dados])
+    except Exception:
+        pass
+
+    # 3. Contingência local
+    if sigla_uf == "MG":
+        return CIDADES_MG_BASE
     if sigla_uf == "SP":
-        return sorted([
-            "São Paulo", "Guarulhos", "Campinas", "São Bernardo do Campo", "Santo André",
-            "São José dos Campos", "Osasco", "Ribeirão Preto", "Sorocaba", "Santos",
-            "Mauá", "São José do Rio Preto", "Mogi das Cruzes", "Diadema", "Jundiaí",
-            "Piracicaba", "Carapicuíba", "Bauru", "Itaquaquecetuba", "São Vicente",
-            "Franca", "Praia Grande", "Guarujá", "Taubaté", "Limeira", "Suzano",
-            "Taboão da Serra", "Sumaré", "Barueri", "Embu das Artes", "Indaiatuba",
-            "Cotia", "Americana", "Marília", "Araraquara", "Jacareí", "Presidente Prudente"
-        ])
+        return CIDADES_SP_BASE
     return ["Capital"]
 
 def obter_dado(obj, chave, padrao=0.0):
@@ -362,12 +400,12 @@ if origem_tipo == "Brasil (Municípios)":
     total_cid = len(lista_cidades_uf)
     
     idx_padrao = 0
-    if sigla_uf == "RJ" and "Rio de Janeiro" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Rio de Janeiro")
+    if sigla_uf == "MG" and "Belo Horizonte" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Belo Horizonte")
     elif sigla_uf == "SP" and "São Paulo" in lista_cidades_uf:
         idx_padrao = lista_cidades_uf.index("São Paulo")
-    elif sigla_uf == "MG" and "Belo Horizonte" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Belo Horizonte")
+    elif sigla_uf == "RJ" and "Rio de Janeiro" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Rio de Janeiro")
     elif sigla_uf == "BA" and "Salvador" in lista_cidades_uf:
         idx_padrao = lista_cidades_uf.index("Salvador")
     
