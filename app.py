@@ -1,4 +1,4 @@
-import os, json, ssl, math, urllib.request, urllib.parse
+import os, json, ssl, math, tempfile, urllib.request, urllib.parse
 from io import BytesIO
 from datetime import datetime, timedelta
 import streamlit as st
@@ -13,6 +13,13 @@ try:
     REPORTLAB_DISPONIVEL = True
 except ImportError:
     REPORTLAB_DISPONIVEL = False
+
+try:
+    from svglib.svglib import svg2rlg
+    from reportlab.graphics import renderPDF
+    SVGLIB_DISPONIVEL = True
+except ImportError:
+    SVGLIB_DISPONIVEL = False
 
 st.set_page_config(page_title="Astrologia Consciente | Astrolodoug", page_icon="✨", layout="wide")
 
@@ -87,7 +94,6 @@ ESTADOS_BR = [
 CIDADES_AC = sorted(["Acrelândia", "Assis Brasil", "Brasiléia", "Bujari", "Capixaba", "Cruzeiro do Sul", "Epitaciolândia", "Feijó", "Jordão", "Mâncio Lima", "Manoel Urbano", "Marechal Thaumaturgo", "Plácido de Castro", "Porto Acre", "Porto Walter", "Rio Branco", "Rodrigues Alves", "Santa Rosa do Purus", "Sena Madureira", "Senador Guiomard", "Tarauacá", "Xapuri"])
 CIDADES_AP = sorted(["Amapá", "Calçoene", "Cutias", "Ferreira Gomes", "Itaubal", "Laranjal do Jari", "Macapá", "Mazagão", "Oiapoque", "Pedra Branca do Amapari", "Porto Grande", "Pracuúba", "Santana", "Serra do Navio", "Tartarugalzinho", "Vitória do Jari"])
 CIDADES_RR = sorted(["Alto Alegre", "Amajari", "Boa Vista", "Bonfim", "Cantá", "Caracaraí", "Caroebe", "Iracema", "Mucajaí", "Normandia", "Pacaraima", "Rorainópolis", "São João da Baliza", "São Luiz", "Uiramutã"])
-
 CIDADES_RJ = sorted(["Angra dos Reis", "Aperibé", "Araruama", "Areal", "Armação dos Búzios", "Arraial do Cabo", "Barra do Piraí", "Barra Mansa", "Belford Roxo", "Bom Jardim", "Bom Jesus do Itabapoana", "Cabo Frio", "Cachoeiras de Macacu", "Cambuci", "Campos dos Goytacazes", "Cantagalo", "Carapebus", "Cardoso Moreira", "Carmo", "Casimiro de Abreu", "Comendador Levy Gasparian", "Conceição de Macabu", "Cordeiro", "Duas Barras", "Duque de Caxias", "Engenheiro Paulo de Frontin", "Guapimirim", "Iguaba Grande", "Itaboraí", "Itaguaí", "Italva", "Itaocara", "Itaperuna", "Itatiaia", "Japeri", "Laje do Muriaé", "Macaé", "Macuco", "Magé", "Mangaratiba", "Maricá", "Mendes", "Mesquita", "Miguel Pereira", "Miracema", "Natividade", "Nilópolis", "Niterói", "Nova Friburgo", "Nova Iguaçu", "Paracambi", "Paraíba do Sul", "Paraty", "Paty do Alferes", "Petrópolis", "Pinheiral", "Piraí", "Porciúncula", "Porto Real", "Quatis", "Queimados", "Quissamã", "Resende", "Rio Bonito", "Rio Claro", "Rio das Flores", "Rio das Ostras", "Rio de Janeiro", "Santa Maria Madalena", "Santo Antônio de Pádua", "São Fidélis", "São Francisco de Itabapoana", "São Gonçalo", "São João da Barra", "São João de Meriti", "São José de Ubá", "São José do Vale do Rio Preto", "São Pedro da Aldeia", "São Sebastião do Alto", "Saquarema", "Seropédica", "Silva Jardim", "Sumidouro", "Tanguá", "Teresópolis", "Trajano de Moraes", "Três Rios", "Valença", "Varre-Sai", "Vassouras", "Volta Redonda"])
 CIDADES_BA = sorted(["Abaíra", "Abaré", "Acajutiba", "Alagoinhas", "Alcobaça", "Amargosa", "Barreiras", "Bom Jesus da Lapa", "Brumado", "Camaçari", "Cruz das Almas", "Eunápolis", "Feira de Santana", "Guanambi", "Ilhéus", "Irecê", "Itabuna", "Itacaré", "Jacobina", "Jequié", "Juazeiro", "Lauro de Freitas", "Lençóis", "Paulo Afonso", "Porto Seguro", "Salvador", "Senhor do Bonfim", "Serrinha", "Simões Filho", "Teixeira de Freitas", "Valença", "Vitória da Conquista", "Xique-Xique"])
 CIDADES_PR = sorted(["Apucarana", "Arapongas", "Araucária", "Campo Mourão", "Cascavel", "Castro", "Cianorte", "Colombo", "Curitiba", "Fazenda Rio Grande", "Foz do Iguaçu", "Francisco Beltrão", "Guarapuava", "Londrina", "Maringá", "Paranaguá", "Paranavaí", "Pato Branco", "Pinhais", "Ponta Grossa", "São José dos Pinhais", "Sarandi", "Telêmaco Borba", "Toledo", "Umuarama", "União da Vitória"])
@@ -162,69 +168,26 @@ def seguro_latin(t):
     subst = {
         'Á':'A','À':'A','Ã':'A','Â':'A','É':'E','Ê':'E','Í':'I','Ó':'O','Ô':'O','Õ':'O','Ú':'U',
         'á':'a','à':'a','ã':'a','â':'a','é':'e','ê':'e','í':'i','ó':'o','ô':'o','õ':'o','ú':'u',
-        'ç':'c','Ç':'C','º':'o','ª':'a','°':'o'
+        'ç':'c','Ç':'C','º':'o','ª':'a','°':'o','•':'','–':'-','—':'-','"':'"','"':'"',
+        '“':'"','”':'"','’':"'",'‘':"'"
     }
     texto = str(t)
     for k, v in subst.items():
         texto = texto.replace(k, v)
-    return texto.encode('latin-1', 'replace').decode('latin-1')
+    clean = [ch for ch in texto if ord(ch) < 256]
+    return "".join(clean)
 
-def desenhar_mandala_vetorial(c, cx, cy, raio, asc_abs, cuspides_abs, planetas_plot):
-    c.setStrokeColor(HexColor('#7df9ff'))
-    c.setLineWidth(1.2)
-    c.circle(cx, cy, raio, stroke=1, fill=0)
+def desenhar_losango(c, x, y, cor=HexColor('#7df9ff'), raio=2.5):
+    c.setFillColor(cor)
+    p = c.beginPath()
+    p.moveTo(x, y + raio + 1)
+    p.lineTo(x + raio + 1, y)
+    p.lineTo(x, y - raio - 1)
+    p.lineTo(x - raio - 1, y)
+    p.close()
+    c.drawPath(p, fill=1, stroke=0)
 
-    c.setStrokeColor(HexColor('#48cae4'))
-    c.setLineWidth(0.7)
-    c.circle(cx, cy, raio - 12, stroke=1, fill=0)
-
-    c.setFillColor(HexColor('#1f1b29'))
-    c.circle(cx, cy, 18, stroke=1, fill=1)
-    c.setFillColor(HexColor('#7df9ff'))
-    c.setFont("Helvetica-Bold", 6)
-    c.drawCentredString(cx, cy - 2, "MAPA")
-
-    for h in range(1, 13):
-        c_val = cuspides_abs.get(h, 0.0)
-        ang_deg = (180.0 - (c_val - asc_abs)) % 360
-        ang_rad = math.radians(ang_deg)
-
-        x_in = cx + 18 * math.cos(ang_rad)
-        y_in = cy + 18 * math.sin(ang_rad)
-        x_out = cx + raio * math.cos(ang_rad)
-        y_out = cy + raio * math.sin(ang_rad)
-
-        if h in [1, 4, 7, 10]:
-            c.setStrokeColor(HexColor('#7df9ff'))
-            c.setLineWidth(1.2)
-        else:
-            c.setStrokeColor(HexColor('#dcd6f7'))
-            c.setLineWidth(0.4)
-        c.line(x_in, y_in, x_out, y_out)
-
-        ang_num = math.radians(ang_deg - 15)
-        xn = cx + 28 * math.cos(ang_num)
-        yn = cy + 28 * math.sin(ang_num)
-        c.setFont("Helvetica", 5.5)
-        c.setFillColor(HexColor('#1f1b29'))
-        c.drawCentredString(xn, yn - 2, str(h))
-
-    for p_nome, p_abs, p_sigla in planetas_plot:
-        ang_deg = (180.0 - (p_abs - asc_abs)) % 360
-        ang_rad = math.radians(ang_deg)
-
-        px = cx + (raio - 22) * math.cos(ang_rad)
-        py = cy + (raio - 22) * math.sin(ang_rad)
-        c.setFillColor(HexColor('#7df9ff'))
-        c.circle(px, py, 2.5, stroke=0, fill=1)
-
-        lx = cx + (raio + 5) * math.cos(ang_rad)
-        ly = cy + (raio + 5) * math.sin(ang_rad)
-        c.setFont("Helvetica-Bold", 5)
-        c.setFillColor(HexColor('#1f1b29'))
-        c.drawCentredString(lx, ly - 2, seguro_latin(p_sigla))
-
-def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_data, tab_pont_raw, tab_proj_raw, asc_abs, cuspides_abs, planetas_plot):
+def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_data, tab_pont_raw, tab_proj_raw, svg_string=None):
     if not REPORTLAB_DISPONIVEL: return None
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
@@ -232,10 +195,12 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
 
     cor_escura = HexColor('#1f1b29')
     cor_ciano = HexColor('#7df9ff')
+    cor_verde = HexColor('#52b788')
+    cor_alerta = HexColor('#f4a261')
     cor_fundo_card = HexColor('#f5f4f9')
     cor_borda = HexColor('#dcd6f7')
 
-    # ========================== PÁGINA 1: MANDALA & FORÇAS / FRAQUEZAS NATAIS ==========================
+    # ========================== PÁGINA 1 ==========================
     c.setFillColor(cor_escura)
     c.rect(0, h_page - 80, w_page, 80, fill=1, stroke=0)
     c.setFillColor(cor_ciano)
@@ -264,74 +229,116 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.drawString(40, h_page - 152, seguro_latin("1. Sintese da Personalidade & Mandala Astrologica Natal"))
     c.line(40, h_page - 156, w_page - 40, h_page - 156)
 
+    # Box Esquerda: Tríade e Vocação
     c.setFillColor(cor_fundo_card)
-    c.roundRect(40, h_page - 325, 290, 160, 5, fill=1, stroke=1)
+    c.roundRect(40, h_page - 370, 275, 205, 5, fill=1, stroke=1)
     c.setFillColor(cor_escura)
     c.setFont("Helvetica-Bold", 9)
     c.drawString(50, h_page - 175, seguro_latin("Eixo de Identidade & Temperamento:"))
-    c.setFont("Helvetica", 8)
-    c.drawString(50, h_page - 192, seguro_latin(f"• Sol Natal: {triade_info['sol']}"))
-    c.drawString(50, h_page - 206, seguro_latin(f"• Lua Natal: {triade_info['lua']}"))
-    c.drawString(50, h_page - 220, seguro_latin(f"• Ascendente: {triade_info['asc']}"))
-    c.drawString(50, h_page - 236, seguro_latin(f"• Elemento Predominante: {swot_data['elemento_dominante']}"))
+    
+    itens_triade = [
+        f"Sol Natal: {triade_info['sol']}",
+        f"Lua Natal: {triade_info['lua']}",
+        f"Ascendente: {triade_info['asc']}",
+        f"Elemento Predominante: {swot_data['elemento_dominante']}"
+    ]
+    y_tr = h_page - 195
+    for it in itens_triade:
+        desenhar_losango(c, 52, y_tr + 3, cor_ciano)
+        c.setFont("Helvetica", 8)
+        c.drawString(60, y_tr, seguro_latin(it))
+        y_tr -= 16
+
     c.setFont("Helvetica-Bold", 8.5)
-    c.drawString(50, h_page - 255, seguro_latin("Area de Maior Vocacao & Realizacao:"))
+    c.drawString(50, h_page - 275, seguro_latin("Area de Maior Vocacao & Realizacao:"))
     c.setFont("Helvetica-Oblique", 8)
-    c.drawString(50, h_page - 270, seguro_latin(f"Setor Focal: {pot_texto['titulo']}"))
-    c.drawString(50, h_page - 284, seguro_latin(f"{pot_texto['descricao'][:60]}"))
-    c.drawString(50, h_page - 296, seguro_latin(f"{pot_texto['descricao'][60:125]}"))
+    c.drawString(50, h_page - 290, seguro_latin(f"Setor Focal: {pot_texto['titulo']}"))
+    c.drawString(50, h_page - 304, seguro_latin(f"{pot_texto['descricao'][:55]}"))
+    c.drawString(50, h_page - 316, seguro_latin(f"{pot_texto['descricao'][55:115]}"))
 
-    desenhar_mandala_vetorial(c, cx=445, cy=h_page - 240, raio=72, asc_abs=asc_abs, cuspides_abs=cuspides_abs, planetas_plot=planetas_plot)
-    c.setFont("Helvetica", 7.5)
-    c.setFillColor(HexColor('#555555'))
-    c.drawCentredString(445, h_page - 328, seguro_latin("Mandala Natal Vetorial com Cuspides e Planetas"))
+    # Renderização da Mandala Idêntica do Site
+    c.setFillColor(HexColor('#ffffff'))
+    c.setStrokeColor(cor_borda)
+    c.roundRect(330, h_page - 370, 225, 205, 5, fill=1, stroke=1)
 
+    mandala_renderizada = False
+    if svg_string and SVGLIB_DISPONIVEL:
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".svg", delete=False, mode="w", encoding="utf-8") as tf:
+                tf.write(svg_string)
+                tf_path = tf.name
+            drawing = svg2rlg(tf_path)
+            try: os.remove(tf_path)
+            except Exception: pass
+            if drawing:
+                tam_alvo = 195
+                escala = tam_alvo / max(drawing.width, drawing.height, 1)
+                drawing.scale(escala, escala)
+                drawing.width = drawing.width * escala
+                drawing.height = drawing.height * escala
+                renderPDF.draw(drawing, c, 345, h_page - 365)
+                mandala_renderizada = True
+        except Exception:
+            mandala_renderizada = False
+
+    if not mandala_renderizada:
+        c.setFillColor(cor_escura)
+        c.setFont("Helvetica", 8)
+        c.drawCentredString(442, h_page - 275, seguro_latin("Mandala Astrologica Oficial"))
+        c.setFont("Helvetica-Oblique", 7)
+        c.drawCentredString(442, h_page - 290, seguro_latin("(Ative o pacote svglib no requirements.txt)"))
+
+    # Seção 2: Forças e Fraquezas (SWOT Natal)
     c.setFont("Helvetica-Bold", 11)
     c.setFillColor(cor_escura)
-    c.drawString(40, h_page - 350, seguro_latin("2. Analise Comportamental: Forcas e Fraquezas Natais"))
-    c.line(40, h_page - 354, w_page - 40, h_page - 354)
+    c.drawString(40, h_page - 390, seguro_latin("2. Analise Comportamental: Forcas e Fraquezas Natais"))
+    c.line(40, h_page - 394, w_page - 40, h_page - 394)
 
     w_box = (w_page - 90) / 2
-    c.setFillColor(HexColor('#e8fbfb'))
-    c.setStrokeColor(cor_ciano)
-    c.roundRect(40, h_page - 490, w_box, 125, 5, fill=1, stroke=1)
+    c.setFillColor(HexColor('#eefbf5'))
+    c.setStrokeColor(cor_verde)
+    c.roundRect(40, h_page - 520, w_box, 118, 5, fill=1, stroke=1)
     c.setFillColor(cor_escura)
     c.setFont("Helvetica-Bold", 9)
-    c.drawString(50, h_page - 375, seguro_latin("FORCAS (Potenciais Inatos):"))
-    c.setFont("Helvetica", 8)
-    y_f = h_page - 395
+    c.drawString(50, h_page - 410, seguro_latin("FORCAS (Potenciais Inatos):"))
+    y_f = h_page - 430
     for item in swot_data['forcas']:
-        c.drawString(50, y_f, seguro_latin(f"• {item[:45]}"))
+        desenhar_losango(c, 52, y_f + 3, cor_verde)
+        c.setFont("Helvetica", 8)
+        c.drawString(60, y_f, seguro_latin(item[:45]))
         if len(item) > 45:
-            y_f -= 11
-            c.drawString(56, y_f, seguro_latin(f"{item[45:90]}"))
+            y_f -= 10
+            c.drawString(60, y_f, seguro_latin(item[45:90]))
         y_f -= 14
 
-    c.setFillColor(HexColor('#fcf2f4'))
+    c.setFillColor(HexColor('#fff5f5'))
     c.setStrokeColor(HexColor('#ff758f'))
-    c.roundRect(45 + w_box, h_page - 490, w_box, 125, 5, fill=1, stroke=1)
+    c.roundRect(45 + w_box, h_page - 520, w_box, 118, 5, fill=1, stroke=1)
     c.setFillColor(cor_escura)
     c.setFont("Helvetica-Bold", 9)
-    c.drawString(55 + w_box, h_page - 375, seguro_latin("FRAQUEZAS (Zonas de Atencao):"))
-    c.setFont("Helvetica", 8)
-    y_fr = h_page - 395
+    c.drawString(55 + w_box, h_page - 410, seguro_latin("FRAQUEZAS (Zonas de Atencao):"))
+    y_fr = h_page - 430
     for item in swot_data['fraquezas']:
-        c.drawString(55 + w_box, y_fr, seguro_latin(f"• {item[:45]}"))
+        desenhar_losango(c, 57 + w_box, y_fr + 3, HexColor('#ff758f'))
+        c.setFont("Helvetica", 8)
+        c.drawString(65 + w_box, y_fr, seguro_latin(item[:45]))
         if len(item) > 45:
-            y_fr -= 11
-            c.drawString(61 + w_box, y_fr, seguro_latin(f"{item[45:90]}"))
+            y_fr -= 10
+            c.drawString(65 + w_box, y_fr, seguro_latin(item[45:90]))
         y_fr -= 14
 
+    # Seção 3: Ponteiros Atuais
     c.setFont("Helvetica-Bold", 11)
     c.setFillColor(cor_escura)
-    c.drawString(40, h_page - 515, seguro_latin("3. Posicionamento Atual dos 9 Ponteiros"))
-    c.line(40, h_page - 519, w_page - 40, h_page - 519)
+    c.drawString(40, h_page - 542, seguro_latin("3. Posicionamento Atual dos 9 Ponteiros"))
+    c.line(40, h_page - 546, w_page - 40, h_page - 546)
 
-    y_p = h_page - 536
-    c.setFont("Helvetica", 8)
+    y_p = h_page - 564
     for it in tab_pont_raw[:9]:
-        c.drawString(45, y_p, seguro_latin(f"• {it['Ponteiro']}: {it['Pos']}  |  {it['Reg']}"))
-        y_p -= 16
+        desenhar_losango(c, 47, y_p + 3, cor_ciano)
+        c.setFont("Helvetica", 8)
+        c.drawString(55, y_p, seguro_latin(f"{it['Ponteiro']}: {it['Pos']}  |  {it['Reg']}"))
+        y_p -= 15
 
     c.setStrokeColor(cor_borda)
     c.line(40, 40, w_page - 40, 40)
@@ -342,7 +349,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
 
     c.showPage()
 
-    # ========================== PÁGINA 2: OPORTUNIDADES & AMEAÇAS / PROJEÇÃO 12 MESES ==========================
+    # ========================== PÁGINA 2 ==========================
     c.setFillColor(cor_escura)
     c.rect(0, h_page - 50, w_page, 50, fill=1, stroke=0)
     c.setFillColor(cor_ciano)
@@ -357,34 +364,36 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.line(40, h_page - 79, w_page - 40, h_page - 79)
 
     c.setFillColor(HexColor('#eefbf5'))
-    c.setStrokeColor(HexColor('#52b788'))
+    c.setStrokeColor(cor_verde)
     c.roundRect(40, h_page - 215, w_box, 125, 5, fill=1, stroke=1)
     c.setFillColor(cor_escura)
     c.setFont("Helvetica-Bold", 9)
     c.drawString(50, h_page - 98, seguro_latin("OPORTUNIDADES (Janelas de Expansao):"))
-    c.setFont("Helvetica", 8)
     y_op = h_page - 116
     for item in swot_data['oportunidades']:
-        c.drawString(50, y_op, seguro_latin(f"• {item[:45]}"))
+        desenhar_losango(c, 52, y_op + 3, cor_verde)
+        c.setFont("Helvetica", 8)
+        c.drawString(60, y_op, seguro_latin(item[:45]))
         if len(item) > 45:
-            y_op -= 11
-            c.drawString(56, y_op, seguro_latin(f"{item[45:90]}"))
-        y_op -= 13
+            y_op -= 10
+            c.drawString(60, y_op, seguro_latin(item[45:90]))
+        y_op -= 14
 
     c.setFillColor(HexColor('#fff9eb'))
-    c.setStrokeColor(HexColor('#f4a261'))
+    c.setStrokeColor(cor_alerta)
     c.roundRect(45 + w_box, h_page - 215, w_box, 125, 5, fill=1, stroke=1)
     c.setFillColor(cor_escura)
     c.setFont("Helvetica-Bold", 9)
     c.drawString(55 + w_box, h_page - 98, seguro_latin("AMEACAS (Gatilhos de Rigor & Atencao):"))
-    c.setFont("Helvetica", 8)
     y_am = h_page - 116
     for item in swot_data['ameacas']:
-        c.drawString(55 + w_box, y_am, seguro_latin(f"• {item[:45]}"))
+        desenhar_losango(c, 57 + w_box, y_am + 3, cor_alerta)
+        c.setFont("Helvetica", 8)
+        c.drawString(65 + w_box, y_am, seguro_latin(item[:45]))
         if len(item) > 45:
-            y_am -= 11
-            c.drawString(61 + w_box, y_am, seguro_latin(f"{item[45:90]}"))
-        y_am -= 13
+            y_am -= 10
+            c.drawString(65 + w_box, y_am, seguro_latin(item[45:90]))
+        y_am -= 14
 
     c.setFont("Helvetica-Bold", 11)
     c.setFillColor(cor_escura)
@@ -392,9 +401,10 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.line(40, h_page - 242, w_page - 40, h_page - 242)
 
     y_pr = h_page - 260
-    c.setFont("Helvetica", 8)
     for p in tab_proj_raw[:7]:
-        c.drawString(45, y_pr, seguro_latin(f"• {p['Data']}: {p['Ponteiro']} em {p['Aspecto']} ({p['Regência']})"))
+        desenhar_losango(c, 47, y_pr + 3, cor_ciano)
+        c.setFont("Helvetica", 8)
+        c.drawString(55, y_pr, seguro_latin(f"{p['Data']}: {p['Ponteiro']} em {p['Aspecto']} ({p['Regência']})"))
         y_pr -= 15
 
     c.setFont("Helvetica-Bold", 11)
@@ -522,7 +532,6 @@ if st.session_state.mapa_gerado:
                 
                 tab_pl = []
                 mapa_casas_planetas = {}
-                planetas_plot = []
                 contagem_elem = {"Fogo": 0, "Terra": 0, "Ar": 0, "Água": 0}
                 mapa_signo_elem = {"Áries":"Fogo","Leão":"Fogo","Sagitário":"Fogo","Touro":"Terra","Virgem":"Terra","Capricórnio":"Terra","Gêmeos":"Ar","Libra":"Ar","Aquário":"Ar","Câncer":"Água","Escorpião":"Água","Peixes":"Água"}
 
@@ -533,7 +542,6 @@ if st.session_state.mapa_gerado:
                     s_nome = nome_sig(obter_dado(po, 'sign', ''))
                     contagem_elem[mapa_signo_elem.get(s_nome, "Ar")] += 1
 
-                    planetas_plot.append((pn, p_abs, f"{sigla_curta} {int(obter_dado(po, 'position', 0))}°"))
                     rotulo_casa = f"{num_casa}ª Casa (orbe de {int(orbe_val)}°)" if por_orbe else f"{num_casa}ª Casa"
                     pos_p = float(obter_dado(po, 'position', 0.0))
                     tab_pl.append({
@@ -633,8 +641,7 @@ if st.session_state.mapa_gerado:
                     pdf_bytes = fabricar_pdf_estilizado(
                         nome_c=nome, cid_c=cidade, dt_ref=DATA_ANALISE.strftime('%d/%m/%Y'),
                         triade_info=triade_resumo, pot_texto=potencial_info, swot_data=swot_data,
-                        tab_pont_raw=tab_pont_pdf, tab_proj_raw=tab_fp,
-                        asc_abs=asc_b, cuspides_abs=cuspides_abs, planetas_plot=planetas_plot
+                        tab_pont_raw=tab_pont_pdf, tab_proj_raw=tab_fp, svg_string=svg
                     )
 
                     st.success(f"✅ Contacto registado: **{st.session_state.contato_salvo}**! O seu relatório executivo completo foi gerado:")
@@ -661,7 +668,7 @@ if st.session_state.mapa_gerado:
                     with col_btn1:
                         if pdf_bytes:
                             st.download_button(
-                                label="📥 Baixar PDF com Mandala & SWOT",
+                                label="📥 Baixar PDF Executivo Completo",
                                 data=pdf_bytes,
                                 file_name=f"Relatorio_Astrologia_Consciente_{nome.replace(' ','_')}.pdf",
                                 mime="application/pdf",
