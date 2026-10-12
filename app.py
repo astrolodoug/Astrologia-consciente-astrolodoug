@@ -76,16 +76,203 @@ POTENCIAL_CASAS = {
 }
 
 ESTADOS_BR = [
-    "PR - Paraná", "SP - São Paulo", "RJ - Rio de Janeiro", "MG - Minas Gerais", "BA - Bahia",
-    "RS - Rio Grande do Sul", "PE - Pernambuco", "CE - Ceará", "PA - Pará", "SC - Santa Catarina",
-    "GO - Goiás", "MA - Maranhão", "AM - Amazonas", "ES - Espírito Santo", "PB - Paraíba",
-    "RN - Rio Grande do Norte", "MT - Mato Grosso", "AL - Alagoas", "PI - Piauí",
-    "DF - Distrito Federal", "MS - Mato Grosso do Sul", "SE - Sergipe", "RO - Rondônia",
-    "TO - Tocantins", "AC - Acre", "AP - Amapá", "RR - Roraima"
+    "PE - Pernambuco", "CE - Ceará", "PA - Pará", "SP - São Paulo", "RJ - Rio de Janeiro",
+    "MG - Minas Gerais", "BA - Bahia", "PR - Paraná", "RS - Rio Grande do Sul",
+    "SC - Santa Catarina", "GO - Goiás", "MA - Maranhão", "AM - Amazonas",
+    "ES - Espírito Santo", "PB - Paraíba", "RN - Rio Grande do Norte", "MT - Mato Grosso",
+    "AL - Alagoas", "PI - Piauí", "DF - Distrito Federal", "MS - Mato Grosso do Sul",
+    "SE - Sergipe", "RO - Rondônia", "TO - Tocantins", "AC - Acre", "AP - Amapá", "RR - Roraima"
 ]
 
-# BASE COMPLETA OFICIAL: TODAS AS 399 CIDADES DO PARANÁ (IBGE)
-CIDADES_PR = sorted(list(set([
+# PERNAMBUCO (185 CIDADES)
+CIDADES_PE = sorted(list(set([
+    "Abreu e Lima", "Afogados da Ingazeira", "Afrânio", "Agrestina", "Água Preta", "Águas Belas",
+    "Alagoinha", "Aliança", "Altinho", "Amaraji", "Angelim", "Araçoiaba", "Araripina", "Arcoverde",
+    "Barra de Guabiraba", "Barreiros", "Belém de Maria", "Belém do São Francisco", "Belo Jardim",
+    "Betânia", "Bezerros", "Bodocó", "Bom Conselho", "Bom Jardim", "Bonito", "Brejão", "Brejinho",
+    "Brejo da Madre de Deus", "Buenos Aires", "Buíque", "Cabo de Santo Agostinho", "Cabrobó",
+    "Cachoeirinha", "Caetés", "Calçado", "Calumbi", "Camaragibe", "Camocim de São Félix",
+    "Camutanga", "Canhotinho", "Capoeiras", "Carnaíba", "Carnaubeira da Penha", "Carpina",
+    "Caruaru", "Casinhas", "Catende", "Cedro", "Chã de Alegria", "Chã Grande", "Condado",
+    "Correntes", "Cortês", "Cumaru", "Cupira", "Custódia", "Dormentes", "Escada", "Exu",
+    "Feira Nova", "Fernando de Noronha", "Ferreiros", "Flores", "Floresta", "Frei Miguelinho",
+    "Gameleira", "Garanhuns", "Glória do Goitá", "Goiana", "Granito", "Gravatá", "Iati",
+    "Ibimirim", "Ibirajuba", "Igarassu", "Iguaracy", "Inajá", "Ingazeira", "Ipojuca", "Ipubi",
+    "Itacuruba", "Itaíba", "Ilha de Itamaracá", "Itambé", "Itapetim", "Itapissuma", "Itaquitinga",
+    "Jaboatão dos Guararapes", "Jaqueira", "Jataúba", "Jatobá", "João Alfredo", "Joaquim Nabuco",
+    "Jucati", "Jupi", "Jurema", "Lagoa do Carro", "Lagoa de Itaenga", "Lagoa do Ouro",
+    "Lagoa dos Gatos", "Lagoa Grande", "Lajedo", "Limoeiro", "Macaparana", "Machados", "Manari",
+    "Maraial", "Mirandiba", "Moreno", "Nazaré da Mata", "Olinda", "Orobó", "Orocó", "Ouricuri",
+    "Palmares", "Palmeirina", "Panelas", "Paranatama", "Parnamirim", "Passira", "Paudalho",
+    "Paulista", "Pedra", "Pesqueira", "Petrolândia", "Petrolina", "Poção", "Pombos", "Primavera",
+    "Quipapá", "Quixaba", "Recife", "Riacho das Almas", "Ribeirão", "Rio Formoso", "Sairé",
+    "Salgadinho", "Salgueiro", "Saloá", "Sanharó", "Santa Cruz", "Santa Cruz da Baixa Verde",
+    "Santa Cruz do Capibaribe", "Santa Filomena", "Santa Maria da Boa Vista", "Santa Maria do Cambucá",
+    "Santa Terezinha", "São Benedito do Sul", "São Bento do Una", "São Caitano", "São João",
+    "São Joaquim do Monte", "São José da Coroa Grande", "São José do Belmonte", "São José do Egito",
+    "São Lourenço da Mata", "São Vicente Férrer", "Serra Talhada", "Serrita", "Sertânia",
+    "Sirinhaém", "Solidão", "Surubim", "Tabira", "Tacaimbó", "Tacaratu", "Tamandaré",
+    "Taquaritinga do Norte", "Terezinha", "Terra Nova", "Timbaúba", "Toritama", "Tracunhaém",
+    "Trindade", "Triunfo", "Tupanatinga", "Tuparetama", "Venturosa", "Verdejante",
+    "Vertente do Lério", "Vertentes", "Vicência", "Vitória de Santo Antão", "Xexéu"
+])))
+
+# CEARÁ (184 CIDADES)
+CIDADES_CE = sorted(list(set([
+    "Abaiara", "Acarape", "Acaraú", "Acopiara", "Aiuaba", "Alcântaras", "Altaneira", "Alto Santo",
+    "Amontada", "Antonina do Norte", "Apuiarés", "Aquiraz", "Aracati", "Aracoiaba", "Ararendá",
+    "Araripe", "Aratuba", "Arneiroz", "Assaré", "Aurora", "Baixio", "Banabuiú", "Barbalha",
+    "Barreira", "Barro", "Barroquinha", "Baturité", "Beberibe", "Bela Cruz", "Boa Viagem",
+    "Brejo Santo", "Camocim", "Campos Sales", "Canindé", "Capistrano", "Caridade", "Cariré",
+    "Caririaçu", "Cariús", "Carnaubal", "Cascavel", "Catarina", "Catunda", "Caucaia", "Cedro",
+    "Chaval", "Choró", "Chorozinho", "Coreaú", "Crateús", "Crato", "Croatá", "Cruz",
+    "Deputado Irapuan Pinheiro", "Ereré", "Eusébio", "Farias Brito", "Forquilha", "Fortaleza",
+    "Fortim", "Frecheirinha", "General Sampaio", "Graça", "Granja", "Granjeiro", "Groaíras",
+    "Guaiúba", "Guaraciaba do Norte", "Guaramiranga", "Hidrolândia", "Horizonte", "Ibaretama",
+    "Ibiapina", "Ibicuitinga", "Icapuí", "Icó", "Iguatu", "Independência", "Ipaumirim", "Ipu",
+    "Ipueiras", "Iracema", "Irauçuba", "Itaiçaba", "Itaitinga", "Itapajé", "Itapipoca", "Itapiúna",
+    "Itarema", "Itatira", "Jaguaretama", "Jaguaribara", "Jaguaribe", "Jaguaruana", "Jardim",
+    "Jati", "Jijoca de Jericoacoara", "Juazeiro do Norte", "Jucás", "Lavras da Mangabeira",
+    "Limoeiro do Norte", "Madalena", "Maracanaú", "Maranguape", "Marco", "Martinópole", "Massapê",
+    "Mauriti", "Meruoca", "Milagres", "Milhã", "Miraíma", "Missão Velha", "Mombaça",
+    "Monsenhor Tabosa", "Morada Nova", "Moraújo", "Morrinhos", "Mucambo", "Mulungu", "Nova Olinda",
+    "Nova Russas", "Novo Oriente", "Ocara", "Orós", "Pacajus", "Pacatuba", "Pacoti", "Pacujá",
+    "Palhano", "Palmácia", "Paracuru", "Paraipaba", "Parambu", "Paramoti", "Pedra Branca",
+    "Penaforte", "Pentecoste", "Pereiro", "Pindoretama", "Piquet Carneiro", "Pires Ferreira",
+    "Poranga", "Porteiras", "Potengi", "Potiretama", "Quiterianópolis", "Quixadá", "Quixelô",
+    "Quixeramobim", "Quixeré", "Redenção", "Reriutaba", "Russas", "Saboeiro", "Salitre",
+    "Santa Quitéria", "Santana do Acaraú", "Santana do Cariri", "São Benedito",
+    "São Gonçalo do Amarante", "São João do Jaguaribe", "São Luís do Curu", "Senador Pompeu",
+    "Senador Sá", "Sobral", "Solonópole", "Tabuleiro do Norte", "Tamboril", "Tarrafas", "Tauá",
+    "Tejuçuoca", "Tianguá", "Trairi", "Tururu", "Ubajara", "Umari", "Umirim", "Uruburetama",
+    "Uruoca", "Varjota", "Várzea Alegre", "Viçosa do Ceará"
+])))
+
+# PARÁ (144 CIDADES)
+CIDADES_PA = sorted(list(set([
+    "Abaetetuba", "Abel Figueiredo", "Acará", "Afuá", "Água Azul do Norte", "Alenquer", "Almeirim",
+    "Altamira", "Anajás", "Ananindeua", "Anapu", "Augusto Corrêa", "Aurora do Pará", "Aveiro",
+    "Bagre", "Baião", "Bannach", "Barcarena", "Belém", "Belterra", "Benevides", "Bom Jesus do Tocantins",
+    "Bonito", "Bragança", "Brasil Novo", "Brejo Grande do Araguaia", "Breu Branco", "Breves",
+    "Bujaru", "Cachoeira do Arari", "Cachoeira do Piriá", "Cametá", "Canaã dos Carajás", "Capanema",
+    "Capitão Poço", "Castanhal", "Chaves", "Colares", "Conceição do Araguaia", "Concórdia do Pará",
+    "Cumaru do Norte", "Curionópolis", "Curralinho", "Curuá", "Curuçá", "Dom Eliseu",
+    "Eldorado do Carajás", "Faro", "Floresta do Araguaia", "Garrafão do Norte", "Goianésia do Pará",
+    "Gurupá", "Igarapé-Açu", "Igarapé-Miri", "Inhangapi", "Ipixuna do Pará", "Irituia", "Itaituba",
+    "Itupiranga", "Jacareacanga", "Jacundá", "Juruti", "Limoeiro do Ajuru", "Mãe do Rio",
+    "Magalhães Barata", "Marabá", "Maracanã", "Marapanim", "Marituba", "Medicilândia", "Melgaço",
+    "Mocajuba", "Moju", "Mojuí dos Campos", "Monte Alegre", "Muaná", "Nova Esperança do Piriá",
+    "Nova Ipixuna", "Nova Timboteua", "Novo Progresso", "Novo Repartimento", "Óbidos", "Oeiras do Pará",
+    "Oriximiná", "Ourém", "Ourilândia do Norte", "Pacajá", "Palestina do Pará", "Paragominas",
+    "Parauapebas", "Pau D'Arco", "Peixe-Boi", "Piçarra", "Placas", "Ponta de Pedras", "Portel",
+    "Porto de Moz", "Prainha", "Primavera", "Quatipuru", "Redenção", "Rio Maria", "Rondon do Pará",
+    "Rurópolis", "Salinópolis", "Salvaterra", "Santa Bárbara do Pará", "Santa Cruz do Arari",
+    "Santa Isabel do Pará", "Santa Luzia do Pará", "Santa Maria das Barreiras", "Santa Maria do Pará",
+    "Santana do Araguaia", "Santarém", "Santarém Novo", "Santo Antônio do Tauá",
+    "São Caetano de Odivelas", "São Domingos do Araguaia", "São Domingos do Capim",
+    "São Félix do Xingu", "São Francisco do Pará", "São Geraldo do Araguaia", "São João da Ponta",
+    "São João de Pirabas", "São João do Araguaia", "São Miguel do Guamá", "São Sebastião da Boa Vista",
+    "Sapucaia", "Senador José Porfírio", "Soure", "Tailândia", "Terra Alta", "Terra Santa",
+    "Tomé-Açu", "Tracuateua", "Trairão", "Tucumã", "Tucuruí", "Ulianópolis", "Uruará", "Vigia",
+    "Viseu", "Vitória do Xingu", "Xinguara"
+])))
+
+CIDADES_RS = sorted([
+    "Aceguá", "Água Santa", "Agudo", "Ajuricaba", "Alecrim", "Alegrete", "Alegria",
+    "Almirante Tamandaré do Sul", "Alpestre", "Alto Alegre", "Alto Feliz", "Alvorada",
+    "Amaral Ferrador", "Ametista do Sul", "André da Rocha", "Anta Gorda", "Antônio Prado",
+    "Arambaré", "Araricá", "Aratiba", "Arroio do Meio", "Arroio do Padre", "Arroio do Sal",
+    "Arroio do Tigre", "Arroio dos Ratos", "Arroio Grande", "Arvorezinha", "Augusto Pestana",
+    "Áurea", "Bagé", "Balneário Pinhal", "Barão", "Barão de Cotegipe", "Barão do Triunfo",
+    "Barra do Guarita", "Barra do Quaraí", "Barra do Ribeiro", "Barra do Rio Azul",
+    "Barra Funda", "Barracão", "Barros Cassal", "Benjamin Constant do Sul", "Bento Gonçalves",
+    "Boa Vista das Missões", "Boa Vista do Buricá", "Boa Vista do Cadeado", "Boa Vista do Incra",
+    "Boa Vista do Sul", "Bom Jesus", "Bom Princípio", "Bom Progresso", "Bom Retiro do Sul",
+    "Boqueirão do Leão", "Bossoroca", "Bozano", "Braga", "Brochier", "Butiá", "Caçapava do Sul",
+    "Cacequi", "Cachoeira do Sul", "Cachoeirinha", "Cacique Doble", "Caibaté", "Caiçara",
+    "Camaquã", "Camargo", "Cambará do Sul", "Campestre da Serra", "Campina das Missões",
+    "Campinas do Sul", "Campo Bom", "Campo Novo", "Campos Borges", "Candelária", "Cândido Godói",
+    "Candiota", "Canela", "Canguçu", "Canoas", "Canudos do Vale", "Capão Bonito do Sul",
+    "Capão da Canoa", "Capão do Cipó", "Capão do Leão", "Capela de Santana", "Capitão",
+    "Capivari do Sul", "Caraá", "Carazinho", "Carlos Barbosa", "Carlos Gomes", "Casca",
+    "Caseiros", "Catuípe", "Caxias do Sul", "Centenário", "Cerrito", "Cerro Branco",
+    "Cerro Grande", "Cerro Grande do Sul", "Cerro Largo", "Chapada", "Charqueadas",
+    "Charrua", "Chiapetta", "Chuí", "Chuvisca", "Cidreira", "Ciríaco", "Colinas",
+    "Colorado", "Condor", "Constantina", "Coqueiro Baixo", "Coqueiros do Sul",
+    "Coronel Barros", "Coronel Bicaco", "Coronel Pilar", "Cotiporã", "Coxilha", "Crissiumal",
+    "Cristal", "Cristal do Sul", "Cruz Alta", "Cruzaltense", "Cruzeiro do Sul",
+    "David Canabarro", "Derrubadas", "Dezesseis de Novembro", "Dilermando de Aguiar",
+    "Dois Irmãos", "Dois Irmãos das Missões", "Dois Lajeados", "Dom Feliciano",
+    "Dom Pedro de Alcântara", "Dom Pedrito", "Dona Francisca", "Doutor Maurício Cardoso",
+    "Doutor Ricardo", "Eldorado do Sul", "Encantado", "Encruzilhada do Sul", "Engenho Velho",
+    "Entre Rios do Sul", "Entre-Ijuís", "Erebango", "Erechim", "Ernestina", "Erval Grande",
+    "Erval Seco", "Esmeralda", "Esperança do Sul", "Espumoso", "Estação", "Estância Velha",
+    "Esteio", "Estrela", "Estrela Velha", "Eugênio de Castro", "Fagundes Varela", "Farroupilha",
+    "Faxinal do Soturno", "Faxinalzinho", "Fazenda Vilanova", "Feliz", "Flores da Cunha",
+    "Floriano Peixoto", "Fontoura Xavier", "Formigueiro", "Forquetinha", "Fortaleza dos Valos",
+    "Frederico Westphalen", "Garibaldi", "Garruchos", "Gaurama", "General Câmara", "Gentil",
+    "Getúlio Vargas", "Giruá", "Glorinha", "Gramado", "Gramado dos Loureiros", "Gramado Xavier",
+    "Gravataí", "Guabiju", "Guaíba", "Guaporé", "Guarani das Missões", "Harmonia", "Herval",
+    "Herveiras", "Horizontina", "Hulha Negra", "Humaitá", "Ibarama", "Ibiaçá", "Ibiraiaras",
+    "Ibirapuitã", "Ibirubá", "Igrejinha", "Ijuí", "Ilópolis", "Imbé", "Imigrante",
+    "Independência", "Inhacorá", "Ipê", "Ipiranga do Sul", "Iraí", "Itaara", "Itacurubi",
+    "Itapuca", "Itaqui", "Itati", "Itatiba do Sul", "Ivorá", "Ivoti", "Jaboticaba",
+    "Jacuizinho", "Jacutinga", "Jaguarão", "Jaguari", "Jaquirana", "Jari", "Jóia",
+    "Júlio de Castilhos", "Lagoa Bonita do Sul", "Lagoa dos Três Cantos", "Lagoa Vermelha",
+    "Lagoão", "Lajeado", "Lajeado do Bugre", "Lavras do Sul", "Liberato Salzano",
+    "Lindolfo Collor", "Linha Nova", "Maçambará", "Machadinho", "Mampituba", "Manoel Viana",
+    "Maquiné", "Maratá", "Marau", "Marcelino Ramos", "Mariana Pimentel", "Mariano Moro",
+    "Marques de Souza", "Mata", "Mato Castelhano", "Mato Leitão", "Mato Queimado",
+    "Maximiliano de Almeida", "Minas do Leão", "Miraguaí", "Montauri", "Monte Alegre dos Campos",
+    "Monte Belo do Sul", "Montenegro", "Mormaço", "Morrinhos do Sul", "Morro Redondo",
+    "Morro Reuter", "Mostardas", "Muçum", "Muitos Capões", "Muliterno", "Não-Me-Toque",
+    "Nicolau Vergueiro", "Nonoai", "Nova Alvorada", "Nova Araçá", "Nova Bassano",
+    "Nova Boa Vista", "Nova Bréscia", "Nova Candelária", "Nova Esperança do Sul", "Nova Hartz",
+    "Nova Pádua", "Nova Palma", "Nova Petrópolis", "Nova Prata", "Nova Ramada",
+    "Nova Roma do Sul", "Nova Santa Rita", "Novo Barreiro", "Novo Cabrais", "Novo Hamburgo",
+    "Novo Machado", "Novo Tiradentes", "Novo Xingu", "Olívio", "Osório", "Paim Filho",
+    "Palmares do Sul", "Palmeira das Missões", "Palmitinho", "Panambi", "Pantano Grande",
+    "Paraí", "Paraíso do Sul", "Pareci Novo", "Parobé", "Passa Sete", "Passo do Sobrado",
+    "Passo Fundo", "Paulo Bento", "Paverama", "Pedras Altas", "Pedro Osório", "Pejuçara",
+    "Pelotas", "Picada Café", "Pinhal", "Pinhal da Serra", "Pinhal Grande",
+    "Pinheirinho do Vale", "Pinheiro Machado", "Pinto Bandeira", "Piratini", "Planalto",
+    "Poço das Antas", "Pontão", "Ponte Preta", "Portão", "Porto Alegre", "Porto Lucena",
+    "Porto Mauá", "Porto Vera Cruz", "Porto Xavier", "Pouso Novo", "Presidente Lucena",
+    "Progresso", "Protásio Alves", "Quaraí", "Quatro Irmãos", "Quevedos", "Quinze de Novembro",
+    "Redentora", "Relvado", "Restinga Sêca", "Rio dos Índios", "Rio Grande", "Rio Pardo",
+    "Riozinho", "Roca Sales", "Rodeio Bonito", "Rolador", "Rolante", "Ronda Alta", "Rondinha",
+    "Roque Gonzales", "Rosário do Sul", "Sagrada Família", "Saldanha Marinho", "Salto do Jacuí",
+    "Salvador das Missões", "Salvador do Sul", "Sananduva", "Santa Bárbara do Sul",
+    "Santa Cecília do Sul", "Santa Clara do Sul", "Santa Cruz do Sul", "Santa Margarida do Sul",
+    "Santa Maria", "Santa Maria do Herval", "Santa Rosa", "Santa Tereza", "Santa Vitória do Palmar",
+    "Santana da Boa Vista", "Sant'Ana do Livramento", "Santiago", "Santo Ângelo",
+    "Santo Antônio da Patrulha", "Santo Antônio das Missões", "Santo Antônio do Palma",
+    "Santo Antônio do Planalto", "Santo Augusto", "Santo Cristo", "Santo Expedito do Sul",
+    "São Borja", "São Domingos do Sul", "São Francisco de Assis", "São Francisco de Paula",
+    "São Gabriel", "São Jerônimo", "São João da Urtiga", "São João do Polêsine", "São Jorge",
+    "São José das Missões", "São José do Herval", "São José do Hortêncio", "São José do Inhacorá",
+    "São José do Norte", "São José do Ouro", "São José do Sul", "São José dos Ausentes",
+    "São Leopoldo", "São Lourenço do Sul", "São Luiz Gonzaga", "São Marcos", "São Martinho",
+    "São Martinho da Serra", "São Miguel das Missões", "São Nicolau", "São Paulo das Missões",
+    "São Pedro da Serra", "São Pedro das Missões", "São Pedro do Butiá", "São Pedro do Sul",
+    "São Sebastião do Caí", "São Sepé", "São Valentim", "São Valentim do Sul",
+    "São Valério do Sul", "São Vendelino", "São Vicente do Sul", "Sapiranga", "Sapucaia do Sul",
+    "Sarandi", "Seberi", "Sede Nova", "Segredo", "Selbach", "Senador Salgado Filho",
+    "Sentinela do Sul", "Serafina Corrêa", "Sério", "Sertão", "Sertão Santana",
+    "Sete de Setembro", "Severiano de Almeida", "Silveira Martins", "Sinimbu", "Sobradinho",
+    "Soledade", "Tabaí", "Tapejara", "Tapera", "Tapes", "Taquara", "Taquari", "Taquaruçu do Sul",
+    "Tavares", "Tenente Portela", "Terra de Areia", "Teutônia", "Tio Hugo", "Tiradentes do Sul",
+    "Toropi", "Torres", "Tramandaí", "Travesseiro", "Três Arroios", "Três Cachoeiras",
+    "Três Coroas", "Três de Maio", "Três Forquilhas", "Três Palmeiras", "Três Passos",
+    "Trindade do Sul", "Triunfo", "Tucunduva", "Tunas", "Tupanci do Sul", "Tupanciretã",
+    "Tupandi", "Tuparendi", "Turuçu", "Ubiretama", "União da Serra", "Uruguaiana", "Vacaria",
+    "Vale do Sol", "Vale Real", "Vale Verde", "Vanini", "Venâncio Aires", "Vera Cruz",
+    "Veranópolis", "Vespasiano Corrêa", "Viadutos", "Viamão", "Vicente Dutra", "Victor Graeff",
+    "Vila Flores", "Vila Lângaro", "Vila Maria", "Vila Nova do Sul", "Vista Alegre",
+    "Vista Alegre do Prata", "Vista Gaúcha", "Vitória das Missões", "Westfália", "Xangri-lá"
+])
+
+CIDADES_PR = sorted([
     "Abatiá", "Adrianópolis", "Agudos do Sul", "Almirante Tamandaré", "Altamira do Paraná",
     "Alto Paraíso", "Alto Paraná", "Alto Piquiri", "Altônia", "Alvorada do Sul", "Amaporã",
     "Ampére", "Anahy", "Andirá", "Ângulo", "Antonina", "Antônio Olinto", "Apucarana",
@@ -156,9 +343,9 @@ CIDADES_PR = sorted(list(set([
     "Três Barras do Paraná", "Tunas do Paraná", "Tuneiras do Oeste", "Tupãssi", "Turvo", "Ubiratã",
     "Umuarama", "União da Vitória", "Uniflor", "Uraí", "Ventania", "Vera Cruz do Oeste", "Verê",
     "Virmond", "Vitorino", "Wenceslau Braz", "Xambrê"
-])))
+])
 
-CIDADES_BA = sorted(list(set([
+CIDADES_BA = sorted([
     "Abaíra", "Abaré", "Acajutiba", "Adustina", "Água Fria", "Aiquara", "Alagoinhas", "Alcobaça",
     "Almadina", "Amargosa", "Amélia Rodrigues", "América Dourada", "Anagé", "Andaraí", "Andorinha",
     "Angical", "Anguera", "Antas", "Antônio Cardoso", "Antônio Gonçalves", "Aporá", "Apuarema",
@@ -227,7 +414,7 @@ CIDADES_BA = sorted(list(set([
     "Umburanas", "Una", "Urandi", "Uruçuca", "Utinga", "Valença", "Valente", "Várzea da Roça",
     "Várzea do Poço", "Várzea Nova", "Varzedo", "Vera Cruz", "Vereda", "Vitória da Conquista",
     "Wagner", "Wanderley", "Wenceslau Guimarães", "Xique-Xique"
-])))
+])
 
 CIDADES_RJ = sorted([
     "Angra dos Reis", "Aperibé", "Araruama", "Areal", "Armação dos Búzios",
@@ -278,6 +465,14 @@ CIDADES_SP_BASE = sorted([
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def carregar_municipios(sigla_uf):
+    if sigla_uf == "PE":
+        return CIDADES_PE
+    if sigla_uf == "CE":
+        return CIDADES_CE
+    if sigla_uf == "PA":
+        return CIDADES_PA
+    if sigla_uf == "RS":
+        return CIDADES_RS
     if sigla_uf == "PR":
         return CIDADES_PR
     if sigla_uf == "BA":
@@ -466,6 +661,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
         y_f -= 17
 
     c.setFont("Helvetica-Bold", 12)
+    c.setFillColor(cor_escura)
     c.drawString(45, y_f - 15, seguro_latin("4. Guia Didatico: O Que Esperar Deste Periodo"))
     c.line(45, y_f - 20, w_page - 45, y_f - 20)
 
@@ -537,7 +733,15 @@ if origem_tipo == "Brasil (Municípios)":
     total_cid = len(lista_cidades_uf)
     
     idx_padrao = 0
-    if sigla_uf == "PR" and "Curitiba" in lista_cidades_uf:
+    if sigla_uf == "PE" and "Recife" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Recife")
+    elif sigla_uf == "CE" and "Fortaleza" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Fortaleza")
+    elif sigla_uf == "PA" and "Belém" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Belém")
+    elif sigla_uf == "RS" and "Porto Alegre" in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index("Porto Alegre")
+    elif sigla_uf == "PR" and "Curitiba" in lista_cidades_uf:
         idx_padrao = lista_cidades_uf.index("Curitiba")
     elif sigla_uf == "SP" and "São Paulo" in lista_cidades_uf:
         idx_padrao = lista_cidades_uf.index("São Paulo")
