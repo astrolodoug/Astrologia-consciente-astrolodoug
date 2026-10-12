@@ -1,4 +1,4 @@
-import os, json, urllib.request, urllib.parse
+import os, json, ssl, urllib.request, urllib.parse
 from io import BytesIO
 from datetime import datetime, timedelta
 import streamlit as st
@@ -85,48 +85,31 @@ ESTADOS_BR = [
     "AC - Acre", "AP - Amapá", "RR - Roraima"
 ]
 
-FALLBACK_CAPITAIS = {
-    "SP": ["São Paulo", "Campinas", "Guarulhos", "São Bernardo do Campo", "Santo André", "Osasco", "Santos", "Ribeirão Preto", "São José dos Campos", "Sorocaba"],
-    "RJ": ["Rio de Janeiro", "Niterói", "São Gonçalo", "Duque de Caxias", "Nova Iguaçu", "Campos dos Goytacazes", "Petrópolis", "Volta Redonda"],
-    "MG": ["Belo Horizonte", "Uberlândia", "Contagem", "Juiz de Fora", "Betim", "Montes Claros", "Ribeirão das Neves", "Uberaba"],
-    "BA": ["Salvador", "Feira de Santana", "Vitória da Conquista", "Camaçari", "Itabuna", "Juazeiro", "Ilhéus", "Lauro de Freitas"],
-    "PR": ["Curitiba", "Londrina", "Maringá", "Ponta Grossa", "Cascavel", "São José dos Pinhais", "Foz do Iguaçu"],
-    "RS": ["Porto Alegre", "Caxias do Sul", "Canoas", "Pelotas", "Santa Maria", "Gravataí", "Novo Hamburgo"],
-    "PE": ["Recife", "Jaboatão dos Guararapes", "Olinda", "Caruaru", "Petrolina", "Paulista", "Cabo de Santo Agostinho"],
-    "CE": ["Fortaleza", "Caucaia", "Juazeiro do Norte", "Maracanaú", "Sobral", "Crato", "Itapipoca"],
-    "PA": ["Belém", "Ananindeua", "Santarém", "Marabá", "Parauapebas", "Castanhal"],
-    "SC": ["Florianópolis", "Joinville", "Blumenau", "São José", "Chapecó", "Criciúma", "Itajaí"],
-    "GO": ["Goiânia", "Aparecida de Goiânia", "Anápolis", "Rio Verde", "Águas Lindas de Goiás", "Luziânia"],
-    "MA": ["São Luís", "Imperatriz", "São José de Ribamar", "Timon", "Caxias"],
-    "AM": ["Manaus", "Parintins", "Itacoatiara", "Manacapuru", "Coari"],
-    "ES": ["Vitória", "Vila Velha", "Serra", "Cariacica", "Cachoeiro de Itapemirim", "Linhares"],
-    "PB": ["João Pessoa", "Campina Grande", "Santa Rita", "Patos", "Bayeux"],
-    "RN": ["Natal", "Mossoró", "Parnamirim", "São Gonçalo do Amarante", "Macaíba"],
-    "MT": ["Cuiabá", "Várzea Grande", "Rondonópolis", "Sinop", "Tangará da Serra"],
-    "AL": ["Maceió", "Arapiraca", "Rio Largo", "Palmeira dos Índios"],
-    "PI": ["Teresina", "Parnaíba", "Picos", "Piripiri"],
-    "DF": ["Brasília"],
-    "MS": ["Campo Grande", "Dourados", "Três Lagoas", "Corumbá"],
-    "SE": ["Aracaju", "Nossa Senhora do Socorro", "Lagarto", "Itabaiana"],
-    "RO": ["Porto Velho", "Ji-Paraná", "Ariquemes", "Vilhena"],
-    "TO": ["Palmas", "Araguaína", "Gurupi", "Porto Nacional"],
-    "AC": ["Rio Branco", "Cruzeiro do Sul", "Sena Madureira"],
-    "AP": ["Macapá", "Santana", "Laranjal do Jari"],
-    "RR": ["Boa Vista", "Rorainópolis", "Caracaraí"]
-}
+# Contingência ampliada de segurança
+FALLBACK_SP = sorted([
+    "São Paulo", "Guarulhos", "Campinas", "São Bernardo do Campo", "Santo André",
+    "São José dos Campos", "Osasco", "Ribeirão Preto", "Sorocaba", "Santos",
+    "Mauá", "São José do Rio Preto", "Mogi das Cruzes", "Diadema", "Jundiaí",
+    "Piracicaba", "Carapicuíba", "Bauru", "Itaquaquecetuba", "São Vicente",
+    "Franca", "Praia Grande", "Guarujá", "Taubaté", "Limeira", "Suzano",
+    "Taboão da Serra", "Sumaré", "Barueri", "Embu das Artes", "Indaiatuba",
+    "Cotia", "Americana", "Marília", "Araraquara", "Jacareí", "Presidente Prudente",
+    "Itrapevi", "Rio Claro", "Araçatuba", "Hortolândia", "Santa Bárbara d'Oeste"
+])
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def carregar_municipios_ibge(sigla_uf):
     try:
-        url = f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{sigla_uf}/municipios?orderBy=nome"
-        req = urllib.request.Request(url, headers={'User-Agent': 'AstrologiaConsciente/1.0'})
-        with urllib.request.urlopen(req, timeout=4) as resp:
+        url = f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{sigla_uf}/municipios"
+        ctx = ssl._create_unverified_context()
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+        with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
             dados = json.loads(resp.read().decode('utf-8'))
             if dados and isinstance(dados, list):
-                return [m['nome'] for m in dados]
+                return sorted([m['nome'] for m in dados])
     except Exception:
         pass
-    return FALLBACK_CAPITAIS.get(sigla_uf, ["Capital"])
+    return FALLBACK_SP if sigla_uf == "SP" else ["Capital"]
 
 def obter_dado(obj, chave, padrao=0.0):
     if isinstance(obj, dict): return obj.get(chave, padrao)
@@ -344,18 +327,16 @@ st.markdown("### A Dança dos Ponteiros: Relatório Preditivo e Mandala")
 st.sidebar.header("Dados do Consulente")
 nome = st.sidebar.text_input("Nome Completo", "Douglas Rosa")
 
-# LISTAS SUSPENSAS DINÂMICAS EM CASCATA (ESTADO ➔ MUNICÍPIO)
 st.sidebar.markdown("---")
 st.sidebar.subheader("📍 Local de Nascimento")
 origem_tipo = st.sidebar.radio("País de Origem:", ["Brasil (Municípios IBGE)", "Outro País (Digitar Livre)"], index=0)
 
 if origem_tipo == "Brasil (Municípios IBGE)":
-    # 1. LISTA SUSPENSA DO ESTADO
     uf_escolhida = st.sidebar.selectbox("1. Escolha o Estado (UF):", ESTADOS_BR, index=0)
     sigla_uf = uf_escolhida.split(" - ")[0]
     
-    # 2. CARREGAMENTO DOS MUNICÍPIOS DAQUELE ESTADO
     lista_cidades_uf = carregar_municipios_ibge(sigla_uf)
+    total_cid = len(lista_cidades_uf)
     
     idx_padrao = 0
     if sigla_uf == "SP" and "São Paulo" in lista_cidades_uf:
@@ -367,9 +348,8 @@ if origem_tipo == "Brasil (Municípios IBGE)":
     elif sigla_uf == "BA" and "Salvador" in lista_cidades_uf:
         idx_padrao = lista_cidades_uf.index("Salvador")
     
-    # 3. LISTA SUSPENSA DO MUNICÍPIO COM FILTRO POR DIGITAÇÃO
     mun_escolhido = st.sidebar.selectbox(
-        "2. Escolha o Município:",
+        f"2. Município de {sigla_uf} ({total_cid} cidades):",
         options=lista_cidades_uf,
         index=idx_padrao,
         key=f"mun_{sigla_uf}"
@@ -407,7 +387,7 @@ if st.session_state.mapa_gerado:
             geo = Nominatim(user_agent="astrolodoug_app")
             loc = geo.geocode(cidade)
             if not loc:
-                st.error(f"Localidade '{cidade}' não localizada no serviço cartográfico. Tente selecionar outro município ou digitar manualmente.")
+                st.error(f"Localidade '{cidade}' não localizada. Tente selecionar outro município ou digitar manualmente.")
             else:
                 lat, lng = loc.latitude, loc.longitude
                 tf = TimezoneFinder()
