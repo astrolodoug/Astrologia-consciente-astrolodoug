@@ -1,4 +1,4 @@
-import os, json, ssl, urllib.request, urllib.parse
+import os, json, ssl, math, urllib.request, urllib.parse
 from io import BytesIO
 from datetime import datetime, timedelta
 import streamlit as st
@@ -76,461 +76,45 @@ POTENCIAL_CASAS = {
 }
 
 ESTADOS_BR = [
-    "AC - Acre", "AP - Amapá", "RR - Roraima", "PE - Pernambuco", "CE - Ceará", "PA - Pará",
     "SP - São Paulo", "RJ - Rio de Janeiro", "MG - Minas Gerais", "BA - Bahia",
-    "PR - Paraná", "RS - Rio Grande do Sul", "SC - Santa Catarina", "GO - Goiás",
+    "PR - Paraná", "RS - Rio Grande do Sul", "PE - Pernambuco", "CE - Ceará", "PA - Pará",
+    "AC - Acre", "AP - Amapá", "RR - Roraima", "SC - Santa Catarina", "GO - Goiás",
     "MA - Maranhão", "AM - Amazonas", "ES - Espírito Santo", "PB - Paraíba",
     "RN - Rio Grande do Norte", "MT - Mato Grosso", "AL - Alagoas", "PI - Piauí",
     "DF - Distrito Federal", "MS - Mato Grosso do Sul", "SE - Sergipe", "RO - Rondônia", "TO - Tocantins"
 ]
 
-# ACRE (22 CIDADES)
-CIDADES_AC = sorted(list(set([
-    "Acrelândia", "Assis Brasil", "Brasiléia", "Bujari", "Capixaba", "Cruzeiro do Sul",
-    "Epitaciolândia", "Feijó", "Jordão", "Mâncio Lima", "Manoel Urbano", "Marechal Thaumaturgo",
-    "Plácido de Castro", "Porto Acre", "Porto Walter", "Rio Branco", "Rodrigues Alves",
-    "Santa Rosa do Purus", "Sena Madureira", "Senador Guiomard", "Tarauacá", "Xapuri"
-])))
+CIDADES_AC = sorted(["Acrelândia", "Assis Brasil", "Brasiléia", "Bujari", "Capixaba", "Cruzeiro do Sul", "Epitaciolândia", "Feijó", "Jordão", "Mâncio Lima", "Manoel Urbano", "Marechal Thaumaturgo", "Plácido de Castro", "Porto Acre", "Porto Walter", "Rio Branco", "Rodrigues Alves", "Santa Rosa do Purus", "Sena Madureira", "Senador Guiomard", "Tarauacá", "Xapuri"])
+CIDADES_AP = sorted(["Amapá", "Calçoene", "Cutias", "Ferreira Gomes", "Itaubal", "Laranjal do Jari", "Macapá", "Mazagão", "Oiapoque", "Pedra Branca do Amapari", "Porto Grande", "Pracuúba", "Santana", "Serra do Navio", "Tartarugalzinho", "Vitória do Jari"])
+CIDADES_RR = sorted(["Alto Alegre", "Amajari", "Boa Vista", "Bonfim", "Cantá", "Caracaraí", "Caroebe", "Iracema", "Mucajaí", "Normandia", "Pacaraima", "Rorainópolis", "São João da Baliza", "São Luiz", "Uiramutã"])
 
-# AMAPÁ (16 CIDADES)
-CIDADES_AP = sorted(list(set([
-    "Amapá", "Calçoene", "Cutias", "Ferreira Gomes", "Itaubal", "Laranjal do Jari",
-    "Macapá", "Mazagão", "Oiapoque", "Pedra Branca do Amapari", "Porto Grande",
-    "Pracuúba", "Santana", "Serra do Navio", "Tartarugalzinho", "Vitória do Jari"
-])))
-
-# RORAIMA (15 CIDADES)
-CIDADES_RR = sorted(list(set([
-    "Alto Alegre", "Amajari", "Boa Vista", "Bonfim", "Cantá", "Caracaraí",
-    "Caroebe", "Iracema", "Mucajaí", "Normandia", "Pacaraima", "Rorainópolis",
-    "São João da Baliza", "São Luiz", "Uiramutã"
-])))
-
-# PERNAMBUCO (185 CIDADES)
-CIDADES_PE = sorted(list(set([
-    "Abreu e Lima", "Afogados da Ingazeira", "Afrânio", "Agrestina", "Água Preta", "Águas Belas",
-    "Alagoinha", "Aliança", "Altinho", "Amaraji", "Angelim", "Araçoiaba", "Araripina", "Arcoverde",
-    "Barra de Guabiraba", "Barreiros", "Belém de Maria", "Belém do São Francisco", "Belo Jardim",
-    "Betânia", "Bezerros", "Bodocó", "Bom Conselho", "Bom Jardim", "Bonito", "Brejão", "Brejinho",
-    "Brejo da Madre de Deus", "Buenos Aires", "Buíque", "Cabo de Santo Agostinho", "Cabrobó",
-    "Cachoeirinha", "Caetés", "Calçado", "Calumbi", "Camaragibe", "Camocim de São Félix",
-    "Camutanga", "Canhotinho", "Capoeiras", "Carnaíba", "Carnaubeira da Penha", "Carpina",
-    "Caruaru", "Casinhas", "Catende", "Cedro", "Chã de Alegria", "Chã Grande", "Condado",
-    "Correntes", "Cortês", "Cumaru", "Cupira", "Custódia", "Dormentes", "Escada", "Exu",
-    "Feira Nova", "Fernando de Noronha", "Ferreiros", "Flores", "Floresta", "Frei Miguelinho",
-    "Gameleira", "Garanhuns", "Glória do Goitá", "Goiana", "Granito", "Gravatá", "Iati",
-    "Ibimirim", "Ibirajuba", "Igarassu", "Iguaracy", "Inajá", "Ingazeira", "Ipojuca", "Ipubi",
-    "Itacuruba", "Itaíba", "Ilha de Itamaracá", "Itambé", "Itapetim", "Itapissuma", "Itaquitinga",
-    "Jaboatão dos Guararapes", "Jaqueira", "Jataúba", "Jatobá", "João Alfredo", "Joaquim Nabuco",
-    "Jucati", "Jupi", "Jurema", "Lagoa do Carro", "Lagoa de Itaenga", "Lagoa do Ouro",
-    "Lagoa dos Gatos", "Lagoa Grande", "Lajedo", "Limoeiro", "Macaparana", "Machados", "Manari",
-    "Maraial", "Mirandiba", "Moreno", "Nazaré da Mata", "Olinda", "Orobó", "Orocó", "Ouricuri",
-    "Palmares", "Palmeirina", "Panelas", "Paranatama", "Parnamirim", "Passira", "Paudalho",
-    "Paulista", "Pedra", "Pesqueira", "Petrolândia", "Petrolina", "Poção", "Pombos", "Primavera",
-    "Quipapá", "Quixaba", "Recife", "Riacho das Almas", "Ribeirão", "Rio Formoso", "Sairé",
-    "Salgadinho", "Salgueiro", "Saloá", "Sanharó", "Santa Cruz", "Santa Cruz da Baixa Verde",
-    "Santa Cruz do Capibaribe", "Santa Filomena", "Santa Maria da Boa Vista", "Santa Maria do Cambucá",
-    "Santa Terezinha", "São Benedito do Sul", "São Bento do Una", "São Caitano", "São João",
-    "São Joaquim do Monte", "São José da Coroa Grande", "São José do Belmonte", "São José do Egito",
-    "São Lourenço da Mata", "São Vicente Férrer", "Serra Talhada", "Serrita", "Sertânia",
-    "Sirinhaém", "Solidão", "Surubim", "Tabira", "Tacaimbó", "Tacaratu", "Tamandaré",
-    "Taquaritinga do Norte", "Terezinha", "Terra Nova", "Timbaúba", "Toritama", "Tracunhaém",
-    "Trindade", "Triunfo", "Tupanatinga", "Tuparetama", "Venturosa", "Verdejante",
-    "Vertente do Lério", "Vertentes", "Vicência", "Vitória de Santo Antão", "Xexéu"
-])))
-
-# CEARÁ (184 CIDADES)
-CIDADES_CE = sorted(list(set([
-    "Abaiara", "Acarape", "Acaraú", "Acopiara", "Aiuaba", "Alcântaras", "Altaneira", "Alto Santo",
-    "Amontada", "Antonina do Norte", "Apuiarés", "Aquiraz", "Aracati", "Aracoiaba", "Ararendá",
-    "Araripe", "Aratuba", "Arneiroz", "Assaré", "Aurora", "Baixio", "Banabuiú", "Barbalha",
-    "Barreira", "Barro", "Barroquinha", "Baturité", "Beberibe", "Bela Cruz", "Boa Viagem",
-    "Brejo Santo", "Camocim", "Campos Sales", "Canindé", "Capistrano", "Caridade", "Cariré",
-    "Caririaçu", "Cariús", "Carnaubal", "Cascavel", "Catarina", "Catunda", "Caucaia", "Cedro",
-    "Chaval", "Choró", "Chorozinho", "Coreaú", "Crateús", "Crato", "Croatá", "Cruz",
-    "Deputado Irapuan Pinheiro", "Ereré", "Eusébio", "Farias Brito", "Forquilha", "Fortaleza",
-    "Fortim", "Frecheirinha", "General Sampaio", "Graça", "Granja", "Granjeiro", "Groaíras",
-    "Guaiúba", "Guaraciaba do Norte", "Guaramiranga", "Hidrolândia", "Horizonte", "Ibaretama",
-    "Ibiapina", "Ibicuitinga", "Icapuí", "Icó", "Iguatu", "Independência", "Ipaumirim", "Ipu",
-    "Ipueiras", "Iracema", "Irauçuba", "Itaiçaba", "Itaitinga", "Itapajé", "Itapipoca", "Itapiúna",
-    "Itarema", "Itatira", "Jaguaretama", "Jaguaribara", "Jaguaribe", "Jaguaruana", "Jardim",
-    "Jati", "Jijoca de Jericoacoara", "Juazeiro do Norte", "Jucás", "Lavras da Mangabeira",
-    "Limoeiro do Norte", "Madalena", "Maracanaú", "Maranguape", "Marco", "Martinópole", "Massapê",
-    "Mauriti", "Meruoca", "Milagres", "Milhã", "Miraíma", "Missão Velha", "Mombaça",
-    "Monsenhor Tabosa", "Morada Nova", "Moraújo", "Morrinhos", "Mucambo", "Mulungu", "Nova Olinda",
-    "Nova Russas", "Novo Oriente", "Ocara", "Orós", "Pacajus", "Pacatuba", "Pacoti", "Pacujá",
-    "Palhano", "Palmácia", "Paracuru", "Paraipaba", "Parambu", "Paramoti", "Pedra Branca",
-    "Penaforte", "Pentecoste", "Pereiro", "Pindoretama", "Piquet Carneiro", "Pires Ferreira",
-    "Poranga", "Porteiras", "Potengi", "Potiretama", "Quiterianópolis", "Quixadá", "Quixelô",
-    "Quixeramobim", "Quixeré", "Redenção", "Reriutaba", "Russas", "Saboeiro", "Salitre",
-    "Santa Quitéria", "Santana do Acaraú", "Santana do Cariri", "São Benedito",
-    "São Gonçalo do Amarante", "São João do Jaguaribe", "São Luís do Curu", "Senador Pompeu",
-    "Senador Sá", "Sobral", "Solonópole", "Tabuleiro do Norte", "Tamboril", "Tarrafas", "Tauá",
-    "Tejuçuoca", "Tianguá", "Trairi", "Tururu", "Ubajara", "Umari", "Umirim", "Uruburetama",
-    "Uruoca", "Varjota", "Várzea Alegre", "Viçosa do Ceará"
-])))
-
-# PARÁ (144 CIDADES)
-CIDADES_PA = sorted(list(set([
-    "Abaetetuba", "Abel Figueiredo", "Acará", "Afuá", "Água Azul do Norte", "Alenquer", "Almeirim",
-    "Altamira", "Anajás", "Ananindeua", "Anapu", "Augusto Corrêa", "Aurora do Pará", "Aveiro",
-    "Bagre", "Baião", "Bannach", "Barcarena", "Belém", "Belterra", "Benevides", "Bom Jesus do Tocantins",
-    "Bonito", "Bragança", "Brasil Novo", "Brejo Grande do Araguaia", "Breu Branco", "Breves",
-    "Bujaru", "Cachoeira do Arari", "Cachoeira do Piriá", "Cametá", "Canaã dos Carajás", "Capanema",
-    "Capitão Poço", "Castanhal", "Chaves", "Colares", "Conceição do Araguaia", "Concórdia do Pará",
-    "Cumaru do Norte", "Curionópolis", "Curralinho", "Curuá", "Curuçá", "Dom Eliseu",
-    "Eldorado do Carajás", "Faro", "Floresta do Araguaia", "Garrafão do Norte", "Goianésia do Pará",
-    "Gurupá", "Igarapé-Açu", "Igarapé-Miri", "Inhangapi", "Ipixuna do Pará", "Irituia", "Itaituba",
-    "Itupiranga", "Jacareacanga", "Jacundá", "Juruti", "Limoeiro do Ajuru", "Mãe do Rio",
-    "Magalhães Barata", "Marabá", "Maracanã", "Marapanim", "Marituba", "Medicilândia", "Melgaço",
-    "Mocajuba", "Moju", "Mojuí dos Campos", "Monte Alegre", "Muaná", "Nova Esperança do Piriá",
-    "Nova Ipixuna", "Nova Timboteua", "Novo Progresso", "Novo Repartimento", "Óbidos", "Oeiras do Pará",
-    "Oriximiná", "Ourém", "Ourilândia do Norte", "Pacajá", "Palestina do Pará", "Paragominas",
-    "Parauapebas", "Pau D'Arco", "Peixe-Boi", "Piçarra", "Placas", "Ponta de Pedras", "Portel",
-    "Porto de Moz", "Prainha", "Primavera", "Quatipuru", "Redenção", "Rio Maria", "Rondon do Pará",
-    "Rurópolis", "Salinópolis", "Salvaterra", "Santa Bárbara do Pará", "Santa Cruz do Arari",
-    "Santa Isabel do Pará", "Santa Luzia do Pará", "Santa Maria das Barreiras", "Santa Maria do Pará",
-    "Santana do Araguaia", "Santarém", "Santarém Novo", "Santo Antônio do Tauá",
-    "São Caetano de Odivelas", "São Domingos do Araguaia", "São Domingos do Capim",
-    "São Félix do Xingu", "São Francisco do Pará", "São Geraldo do Araguaia", "São João da Ponta",
-    "São João de Pirabas", "São João do Araguaia", "São Miguel do Guamá", "São Sebastião da Boa Vista",
-    "Sapucaia", "Senador José Porfírio", "Soure", "Tailândia", "Terra Alta", "Terra Santa",
-    "Tomé-Açu", "Tracuateua", "Trairão", "Tucumã", "Tucuruí", "Ulianópolis", "Uruará", "Vigia",
-    "Viseu", "Vitória do Xingu", "Xinguara"
-])))
-
-CIDADES_RS = sorted([
-    "Aceguá", "Água Santa", "Agudo", "Ajuricaba", "Alecrim", "Alegrete", "Alegria",
-    "Almirante Tamandaré do Sul", "Alpestre", "Alto Alegre", "Alto Feliz", "Alvorada",
-    "Amaral Ferrador", "Ametista do Sul", "André da Rocha", "Anta Gorda", "Antônio Prado",
-    "Arambaré", "Araricá", "Aratiba", "Arroio do Meio", "Arroio do Padre", "Arroio do Sal",
-    "Arroio do Tigre", "Arroio dos Ratos", "Arroio Grande", "Arvorezinha", "Augusto Pestana",
-    "Áurea", "Bagé", "Balneário Pinhal", "Barão", "Barão de Cotegipe", "Barão do Triunfo",
-    "Barra do Guarita", "Barra do Quaraí", "Barra do Ribeiro", "Barra do Rio Azul",
-    "Barra Funda", "Barracão", "Barros Cassal", "Benjamin Constant do Sul", "Bento Gonçalves",
-    "Boa Vista das Missões", "Boa Vista do Buricá", "Boa Vista do Cadeado", "Boa Vista do Incra",
-    "Boa Vista do Sul", "Bom Jesus", "Bom Princípio", "Bom Progresso", "Bom Retiro do Sul",
-    "Boqueirão do Leão", "Bossoroca", "Bozano", "Braga", "Brochier", "Butiá", "Caçapava do Sul",
-    "Cacequi", "Cachoeira do Sul", "Cachoeirinha", "Cacique Doble", "Caibaté", "Caiçara",
-    "Camaquã", "Camargo", "Cambará do Sul", "Campestre da Serra", "Campina das Missões",
-    "Campinas do Sul", "Campo Bom", "Campo Novo", "Campos Borges", "Candelária", "Cândido Godói",
-    "Candiota", "Canela", "Canguçu", "Canoas", "Canudos do Vale", "Capão Bonito do Sul",
-    "Capão da Canoa", "Capão do Cipó", "Capão do Leão", "Capela de Santana", "Capitão",
-    "Capivari do Sul", "Caraá", "Carazinho", "Carlos Barbosa", "Carlos Gomes", "Casca",
-    "Caseiros", "Catuípe", "Caxias do Sul", "Centenário", "Cerrito", "Cerro Branco",
-    "Cerro Grande", "Cerro Grande do Sul", "Cerro Largo", "Chapada", "Charqueadas",
-    "Charrua", "Chiapetta", "Chuí", "Chuvisca", "Cidreira", "Ciríaco", "Colinas",
-    "Colorado", "Condor", "Constantina", "Coqueiro Baixo", "Coqueiros do Sul",
-    "Coronel Barros", "Coronel Bicaco", "Coronel Pilar", "Cotiporã", "Coxilha", "Crissiumal",
-    "Cristal", "Cristal do Sul", "Cruz Alta", "Cruzaltense", "Cruzeiro do Sul",
-    "David Canabarro", "Derrubadas", "Dezesseis de Novembro", "Dilermando de Aguiar",
-    "Dois Irmãos", "Dois Irmãos das Missões", "Dois Lajeados", "Dom Feliciano",
-    "Dom Pedro de Alcântara", "Dom Pedrito", "Dona Francisca", "Doutor Maurício Cardoso",
-    "Doutor Ricardo", "Eldorado do Sul", "Encantado", "Encruzilhada do Sul", "Engenho Velho",
-    "Entre Rios do Sul", "Entre-Ijuís", "Erebango", "Erechim", "Ernestina", "Erval Grande",
-    "Erval Seco", "Esmeralda", "Esperança do Sul", "Espumoso", "Estação", "Estância Velha",
-    "Esteio", "Estrela", "Estrela Velha", "Eugênio de Castro", "Fagundes Varela", "Farroupilha",
-    "Faxinal do Soturno", "Faxinalzinho", "Fazenda Vilanova", "Feliz", "Flores da Cunha",
-    "Floriano Peixoto", "Fontoura Xavier", "Formigueiro", "Forquetinha", "Fortaleza dos Valos",
-    "Frederico Westphalen", "Garibaldi", "Garruchos", "Gaurama", "General Câmara", "Gentil",
-    "Getúlio Vargas", "Giruá", "Glorinha", "Gramado", "Gramado dos Loureiros", "Gramado Xavier",
-    "Gravataí", "Guabiju", "Guaíba", "Guaporé", "Guarani das Missões", "Harmonia", "Herval",
-    "Herveiras", "Horizontina", "Hulha Negra", "Humaitá", "Ibarama", "Ibiaçá", "Ibiraiaras",
-    "Ibirapuitã", "Ibirubá", "Igrejinha", "Ijuí", "Ilópolis", "Imbé", "Imigrante",
-    "Independência", "Inhacorá", "Ipê", "Ipiranga do Sul", "Iraí", "Itaara", "Itacurubi",
-    "Itapuca", "Itaqui", "Itati", "Itatiba do Sul", "Ivorá", "Ivoti", "Jaboticaba",
-    "Jacuizinho", "Jacutinga", "Jaguarão", "Jaguari", "Jaquirana", "Jari", "Jóia",
-    "Júlio de Castilhos", "Lagoa Bonita do Sul", "Lagoa dos Três Cantos", "Lagoa Vermelha",
-    "Lagoão", "Lajeado", "Lajeado do Bugre", "Lavras do Sul", "Liberato Salzano",
-    "Lindolfo Collor", "Linha Nova", "Maçambará", "Machadinho", "Mampituba", "Manoel Viana",
-    "Maquiné", "Maratá", "Marau", "Marcelino Ramos", "Mariana Pimentel", "Mariano Moro",
-    "Marques de Souza", "Mata", "Mato Castelhano", "Mato Leitão", "Mato Queimado",
-    "Maximiliano de Almeida", "Minas do Leão", "Miraguaí", "Montauri", "Monte Alegre dos Campos",
-    "Monte Belo do Sul", "Montenegro", "Mormaço", "Morrinhos do Sul", "Morro Redondo",
-    "Morro Reuter", "Mostardas", "Muçum", "Muitos Capões", "Muliterno", "Não-Me-Toque",
-    "Nicolau Vergueiro", "Nonoai", "Nova Alvorada", "Nova Araçá", "Nova Bassano",
-    "Nova Boa Vista", "Nova Bréscia", "Nova Candelária", "Nova Esperança do Sul", "Nova Hartz",
-    "Nova Pádua", "Nova Palma", "Nova Petrópolis", "Nova Prata", "Nova Ramada",
-    "Nova Roma do Sul", "Nova Santa Rita", "Novo Barreiro", "Novo Cabrais", "Novo Hamburgo",
-    "Novo Machado", "Novo Tiradentes", "Novo Xingu", "Olívio", "Osório", "Paim Filho",
-    "Palmares do Sul", "Palmeira das Missões", "Palmitinho", "Panambi", "Pantano Grande",
-    "Paraí", "Paraíso do Sul", "Pareci Novo", "Parobé", "Passa Sete", "Passo do Sobrado",
-    "Passo Fundo", "Paulo Bento", "Paverama", "Pedras Altas", "Pedro Osório", "Pejuçara",
-    "Pelotas", "Picada Café", "Pinhal", "Pinhal da Serra", "Pinhal Grande",
-    "Pinheirinho do Vale", "Pinheiro Machado", "Pinto Bandeira", "Piratini", "Planalto",
-    "Poço das Antas", "Pontão", "Ponte Preta", "Portão", "Porto Alegre", "Porto Lucena",
-    "Porto Mauá", "Porto Vera Cruz", "Porto Xavier", "Pouso Novo", "Presidente Lucena",
-    "Progresso", "Protásio Alves", "Quaraí", "Quatro Irmãos", "Quevedos", "Quinze de Novembro",
-    "Redentora", "Relvado", "Restinga Sêca", "Rio dos Índios", "Rio Grande", "Rio Pardo",
-    "Riozinho", "Roca Sales", "Rodeio Bonito", "Rolador", "Rolante", "Ronda Alta", "Rondinha",
-    "Roque Gonzales", "Rosário do Sul", "Sagrada Família", "Saldanha Marinho", "Salto do Jacuí",
-    "Salvador das Missões", "Salvador do Sul", "Sananduva", "Santa Bárbara do Sul",
-    "Santa Cecília do Sul", "Santa Clara do Sul", "Santa Cruz do Sul", "Santa Margarida do Sul",
-    "Santa Maria", "Santa Maria do Herval", "Santa Rosa", "Santa Tereza", "Santa Vitória do Palmar",
-    "Santana da Boa Vista", "Sant'Ana do Livramento", "Santiago", "Santo Ângelo",
-    "Santo Antônio da Patrulha", "Santo Antônio das Missões", "Santo Antônio do Palma",
-    "Santo Antônio do Planalto", "Santo Augusto", "Santo Cristo", "Santo Expedito do Sul",
-    "São Borja", "São Domingos do Sul", "São Francisco de Assis", "São Francisco de Paula",
-    "São Gabriel", "São Jerônimo", "São João da Urtiga", "São João do Polêsine", "São Jorge",
-    "São José das Missões", "São José do Herval", "São José do Hortêncio", "São José do Inhacorá",
-    "São José do Norte", "São José do Ouro", "São José do Sul", "São José dos Ausentes",
-    "São Leopoldo", "São Lourenço do Sul", "São Luiz Gonzaga", "São Marcos", "São Martinho",
-    "São Martinho da Serra", "São Miguel das Missões", "São Nicolau", "São Paulo das Missões",
-    "São Pedro da Serra", "São Pedro das Missões", "São Pedro do Butiá", "São Pedro do Sul",
-    "São Sebastião do Caí", "São Sepé", "São Valentim", "São Valentim do Sul",
-    "São Valério do Sul", "São Vendelino", "São Vicente do Sul", "Sapiranga", "Sapucaia do Sul",
-    "Sarandi", "Seberi", "Sede Nova", "Segredo", "Selbach", "Senador Salgado Filho",
-    "Sentinela do Sul", "Serafina Corrêa", "Sério", "Sertão", "Sertão Santana",
-    "Sete de Setembro", "Severiano de Almeida", "Silveira Martins", "Sinimbu", "Sobradinho",
-    "Soledade", "Tabaí", "Tapejara", "Tapera", "Tapes", "Taquara", "Taquari", "Taquaruçu do Sul",
-    "Tavares", "Tenente Portela", "Terra de Areia", "Teutônia", "Tio Hugo", "Tiradentes do Sul",
-    "Toropi", "Torres", "Tramandaí", "Travesseiro", "Três Arroios", "Três Cachoeiras",
-    "Três Coroas", "Três de Maio", "Três Forquilhas", "Três Palmeiras", "Três Passos",
-    "Trindade do Sul", "Triunfo", "Tucunduva", "Tunas", "Tupanci do Sul", "Tupanciretã",
-    "Tupandi", "Tuparendi", "Turuçu", "Ubiretama", "União da Serra", "Uruguaiana", "Vacaria",
-    "Vale do Sol", "Vale Real", "Vale Verde", "Vanini", "Venâncio Aires", "Vera Cruz",
-    "Veranópolis", "Vespasiano Corrêa", "Viadutos", "Viamão", "Vicente Dutra", "Victor Graeff",
-    "Vila Flores", "Vila Lângaro", "Vila Maria", "Vila Nova do Sul", "Vista Alegre",
-    "Vista Alegre do Prata", "Vista Gaúcha", "Vitória das Missões", "Westfália", "Xangri-lá"
-])
-
-CIDADES_PR = sorted([
-    "Abatiá", "Adrianópolis", "Agudos do Sul", "Almirante Tamandaré", "Altamira do Paraná",
-    "Alto Paraíso", "Alto Paraná", "Alto Piquiri", "Altônia", "Alvorada do Sul", "Amaporã",
-    "Ampére", "Anahy", "Andirá", "Ângulo", "Antonina", "Antônio Olinto", "Apucarana",
-    "Arapongas", "Arapoti", "Arapuã", "Araruna", "Araucária", "Ariranha do Ivaí", "Assaí",
-    "Assis Chateaubriand", "Astorga", "Atalaia", "Balsa Nova", "Bandeirantes", "Barbosa Ferraz",
-    "Barra do Jacaré", "Barracão", "Bela Vista da Caroba", "Bela Vista do Paraíso", "Bituruna",
-    "Boa Esperança", "Boa Esperança do Iguaçu", "Boa Ventura de São Roque", "Boa Vista da Aparecida",
-    "Bocaiúva do Sul", "Bom Jesus do Sul", "Bom Sucesso", "Bom Sucesso do Sul", "Borrazópolis",
-    "Braganey", "Brasilândia do Sul", "Cafeara", "Cafelândia", "Cafezal do Sul", "Califórnia",
-    "Cambará", "Cambé", "Cambira", "Campina da Lagoa", "Campina do Simão", "Campina Grande do Sul",
-    "Campo Bonito", "Campo do Tenente", "Campo Largo", "Campo Magro", "Campo Mourão",
-    "Cândido de Abreu", "Candói", "Cantagalo", "Capanema", "Capitão Leônidas Marques",
-    "Carambeí", "Carlópolis", "Cascavel", "Castro", "Catanduvas", "Centenário do Sul",
-    "Cerro Azul", "Céu Azul", "Chopinzinho", "Cianorte", "Cidade Gaúcha", "Clevelândia",
-    "Colombo", "Colorado", "Congonhinhas", "Conselheiro Mairinck", "Contenda", "Corbélia",
-    "Cornélio Procópio", "Coronel Domingos Soares", "Coronel Vivida", "Corumbataí do Sul",
-    "Cruz Machado", "Cruzeiro do Iguaçu", "Cruzeiro do Oeste", "Cruzeiro do Sul", "Cruzmaltina",
-    "Curitiba", "Curiúva", "Diamante D'Oeste", "Diamante do Norte", "Diamante do Sul",
-    "Dois Vizinhos", "Douradina", "Doutor Camargo", "Doutor Ulysses", "Enéas Marques",
-    "Engenheiro Beltrão", "Entre Rios do Oeste", "Esperança Nova", "Espigão Alto do Iguaçu",
-    "Farol", "Faxinal", "Fazenda Rio Grande", "Fênix", "Fernandes Pinheiro", "Figueira",
-    "Flor da Serra do Sul", "Floraí", "Floresta", "Florestópolis", "Flórida", "Formosa do Oeste",
-    "Foz do Iguaçu", "Foz do Jordão", "Francisco Alves", "Francisco Beltrão", "General Carneiro",
-    "Godoy Moreira", "Goioerê", "Goioxim", "Grandes Rios", "Guaíra", "Guairaçá", "Guamiranga",
-    "Guapirama", "Guaporema", "Guaraci", "Guaraniaçu", "Guarapuava", "Guaraqueçaba", "Guaratuba",
-    "Honório Serpa", "Ibaiti", "Ibema", "Ibiporã", "Icaraíma", "Iguaraçu", "Iguatu", "Imbaú",
-    "Imbituva", "Inácio Martins", "Inajá", "Indianópolis", "Ipiranga", "Iporã", "Iracema do Oeste",
-    "Irati", "Iretama", "Itaguajé", "Itaipulândia", "Itambaracá", "Itambé", "Itapejara d'Oeste",
-    "Itaperuçu", "Itaúna do Sul", "Ivaí", "Ivaiporã", "Ivaté", "Ivatuba", "Jaboti", "Jacarezinho",
-    "Jaguapitã", "Jaguariaíva", "Jandaia do Sul", "Janiópolis", "Japira", "Japurá", "Jardim Alegre",
-    "Jardim Olinda", "Jataizinho", "Jesuítas", "Joaquim Távora", "Jundiaí do Sul", "Juranda",
-    "Jussara", "Kaloré", "Lapa", "Laranjal", "Laranjeiras do Sul", "Leópolis", "Lidianópolis",
-    "Lindoeste", "Loanda", "Lobato", "Londrina", "Luiziana", "Lunardelli", "Lupionópolis",
-    "Mallet", "Mamborê", "Mandaguaçu", "Mandaguari", "Mandirituba", "Manfrinópolis", "Mangueirinha",
-    "Manoel Ribas", "Marechal Cândido Rondon", "Marialva", "Marilândia do Sul", "Marilena",
-    "Mariluz", "Maringá", "Mariópolis", "Maripá", "Marmeleiro", "Marquinho", "Marumbi",
-    "Matelândia", "Matinhos", "Mato Rico", "Mauá da Serra", "Medianeira", "Mercedes", "Mirador",
-    "Miraselva", "Missal", "Moreira Sales", "Morretes", "Munhoz de Melo", "Nossa Senhora das Graças",
-    "Nova Aliança do Ivaí", "Nova América da Colina", "Nova Aurora", "Nova Cantu", "Nova Esperança",
-    "Nova Esperança do Sudoeste", "Nova Fátima", "Nova Laranjeiras", "Nova Londrina", "Nova Olímpia",
-    "Nova Prata do Iguaçu", "Nova Santa Bárbara", "Nova Santa Rosa", "Nova Tebas", "Novo Itacolomi",
-    "Ortigueira", "Ourizona", "Ouro Verde do Oeste", "Paiçandu", "Palmas", "Palmeira", "Palmital",
-    "Palotina", "Paraíso do Norte", "Paranacity", "Paranaguá", "Paranapoema", "Paranavaí",
-    "Pato Bragado", "Pato Branco", "Paula Freitas", "Paulo Frontin", "Peabiru", "Perobal",
-    "Pérola", "Pérola d'Oeste", "Piên", "Pinhais", "Pinhal de São Bento", "Pinhalão", "Pinhão",
-    "Piraí do Sul", "Piraquara", "Pitanga", "Pitangueiras", "Planaltina do Paraná", "Planalto",
-    "Ponta Grossa", "Pontal do Paraná", "Porecatu", "Porto Amazonas", "Porto Barreiro", "Porto Rico",
-    "Porto Vitória", "Prado Ferreira", "Pranchita", "Presidente Castelo Branco", "Primeiro de Maio",
-    "Prudentópolis", "Quarto Centenário", "Quatiguá", "Quatro Barras", "Quatro Pontes",
-    "Quedas do Iguaçu", "Querência do Norte", "Quinta do Sol", "Quitandinha", "Ramilândia",
-    "Rancho Alegre", "Rancho Alegre D'Oeste", "Realeza", "Rebouças", "Renascença", "Reserva",
-    "Reserva do Iguaçu", "Ribeirão Claro", "Ribeirão do Pinhal", "Rio Azul", "Rio Bom",
-    "Rio Bonito do Iguaçu", "Rio Branco do Ivaí", "Rio Branco do Sul", "Rio Negro", "Rolândia",
-    "Roncador", "Rondon", "Rosário do Ivaí", "Sabáudia", "Salgado Filho", "Salto do Itararé",
-    "Salto do Lontra", "Santa Amélia", "Santa Cecília do Pavão", "Santa Cruz de Monte Castelo",
-    "Santa Fé", "Santa Helena", "Santa Inês", "Santa Isabel do Ivaí", "Santa Izabel do Oeste",
-    "Santa Lúcia", "Santa Maria do Oeste", "Santa Mariana", "Santa Mônica", "Santa Tereza do Oeste",
-    "Santa Terezinha de Itaipu", "Santana do Itararé", "Santo Antônio da Platina",
-    "Santo Antônio do Caiuá", "Santo Antônio do Paraíso", "Santo Antônio do Sudoeste",
-    "Santo Inácio", "São Carlos do Ivaí", "São Jerônimo da Serra", "São João", "São João do Caiuá",
-    "São João do Ivaí", "São João do Triunfo", "São Jorge d'Oeste", "São Jorge do Ivaí",
-    "São Jorge do Patrocínio", "São José da Boa Vista", "São José das Palmeiras",
-    "São José dos Pinhais", "São Manoel do Paraná", "São Mateus do Sul", "São Miguel do Iguaçu",
-    "São Pedro do Iguaçu", "São Pedro do Ivaí", "São Pedro do Paraná", "São Sebastião da Amoreira",
-    "São Tomé", "Sapopema", "Sarandi", "Saudade do Iguaçu", "Sengés", "Serranópolis do Iguaçu",
-    "Sertaneja", "Sertanópolis", "Siqueira Campos", "Sulina", "Tamarana", "Tamboara", "Tapejara",
-    "Tapira", "Teixeira Soares", "Telêmaco Borba", "Tibagi", "Tijucas do Sul", "Toledo", "Tomazina",
-    "Três Barras do Paraná", "Tunas do Paraná", "Tuneiras do Oeste", "Tupãssi", "Turvo", "Ubiratã",
-    "Umuarama", "União da Vitória", "Uniflor", "Uraí", "Ventania", "Vera Cruz do Oeste", "Verê",
-    "Virmond", "Vitorino", "Wenceslau Braz", "Xambrê"
-])
-
-CIDADES_BA = sorted([
-    "Abaíra", "Abaré", "Acajutiba", "Adustina", "Água Fria", "Aiquara", "Alagoinhas", "Alcobaça",
-    "Almadina", "Amargosa", "Amélia Rodrigues", "América Dourada", "Anagé", "Andaraí", "Andorinha",
-    "Angical", "Anguera", "Antas", "Antônio Cardoso", "Antônio Gonçalves", "Aporá", "Apuarema",
-    "Araçás", "Aracatu", "Araci", "Aramari", "Arataca", "Aratuípe", "Aurelino Leal", "Baianópolis",
-    "Baixa Grande", "Banzaê", "Barra", "Barra da Estiva", "Barra do Choça", "Barra do Mendes",
-    "Barra do Rocha", "Barreiras", "Barro Alto", "Barro Preto", "Barrocas", "Belmonte", "Belo Campo",
-    "Biritinga", "Boa Nova", "Boa Vista do Tupim", "Bom Jesus da Lapa", "Bom Jesus da Serra",
-    "Boninal", "Bonito", "Boquira", "Botuporã", "Brejões", "Brejolândia", "Brotas de Macaúbas",
-    "Brumado", "Buerarema", "Buritirama", "Caatiba", "Cabaceiras do Paraguaçu", "Cachoeira",
-    "Caculé", "Caém", "Caetanos", "Caetité", "Cafarnaum", "Cairu", "Caldeirão Grande", "Camacan",
-    "Camaçari", "Camamu", "Campo Alegre de Lourdes", "Campo Formoso", "Canápolis", "Canarana",
-    "Canavieiras", "Candeal", "Candeias", "Candiba", "Cândido Sales", "Cansanção", "Canudos",
-    "Capela do Alto Alegre", "Capim Grosso", "Caraíbas", "Caravelas", "Cardeal da Silva",
-    "Carinhanha", "Casa Nova", "Castro Alves", "Catolândia", "Catu", "Caturama", "Central",
-    "Chorrochó", "Cícero Dantas", "Cipó", "Coaraci", "Cocos", "Conceição da Feira",
-    "Conceição do Almeida", "Conceição do Coité", "Conceição do Jacuípe", "Conde", "Condeúba",
-    "Contendas do Sincorá", "Coração de Maria", "Cordeiros", "Coribe", "Coronel João Sá",
-    "Correntina", "Cotegipe", "Cravolândia", "Crisópolis", "Cristópolis", "Cruz das Almas",
-    "Curaçá", "Dário Meira", "Dias d'Ávila", "Dom Basílio", "Dom Macedo Costa", "Elísio Medrado",
-    "Encruzilhada", "Entre Rios", "Érico Cardoso", "Esplanada", "Euclides da Cunha", "Eunápolis",
-    "Fátima", "Feira da Mata", "Feira de Santana", "Filadélfia", "Firmino Alves", "Floresta Azul",
-    "Formosa do Rio Preto", "Gandu", "Gavião", "Gentio do Ouro", "Glória", "Gongogi",
-    "Governador Mangabeira", "Guajeru", "Guanambi", "Guaratinga", "Heliópolis", "Iaçu",
-    "Ibiassucê", "Ibicaraí", "Ibicoara", "Ibicuí", "Ibipeba", "Ibipitanga", "Ibiquera",
-    "Ibirapitanga", "Ibirapuã", "Ibirataia", "Ibitiara", "Ibititá", "Ibotirama", "Ichu",
-    "Igaporã", "Igrapiúna", "Iguaí", "Ilhéus", "Inhambupe", "Ipecaetá", "Ipiaú", "Ipirá",
-    "Ipupiara", "Irajuba", "Iramaia", "Iraquara", "Irará", "Irecê", "Itabela", "Itaberaba",
-    "Itabuna", "Itacaré", "Itaeté", "Itagi", "Itagibá", "Itagimirim", "Itaguaçu da Bahia",
-    "Itaju do Colônia", "Itajuípe", "Itamaraju", "Itamari", "Itambé", "Itanagra", "Itanhém",
-    "Itaparica", "Itapé", "Itapebi", "Itapetinga", "Itapicuru", "Itapitanga", "Itaquara",
-    "Itarantim", "Itatim", "Itiruçu", "Itiúba", "Itororó", "Ituaçu", "Ituberá", "Iuiú",
-    "Jaborandi", "Jacaraci", "Jacobina", "Jaguaquara", "Jaguarari", "Jaguaripe", "Jandaíra",
-    "Jequié", "Jeremoabo", "Jiquiriçá", "Jitaúna", "João Dourado", "Juazeiro", "Jucuruçu",
-    "Jussara", "Jussari", "Jussiape", "Lafaiete Coutinho", "Lagoa Real", "Laje", "Lajedão",
-    "Lajedinho", "Lajedo do Tabocal", "Lamarão", "Lapão", "Lauro de Freitas", "Lençóis",
-    "Licínio de Almeida", "Livramento de Nossa Senhora", "Luís Eduardo Magalhães", "Macajuba",
-    "Macarani", "Macaúbas", "Macururé", "Madre de Deus", "Maetinga", "Maiquinique", "Mairi",
-    "Malhada", "Malhada de Pedras", "Manoel Vitorino", "Mansidão", "Maracás", "Maragogipe",
-    "Maraú", "Marcionílio Souza", "Mascote", "Mata de São João", "Matina", "Medeiros Neto",
-    "Miguel Calmon", "Milagres", "Mirangaba", "Mirante", "Monte Santo", "Morpará",
-    "Morro do Chapéu", "Mortugaba", "Mucugê", "Mucuri", "Mulungu do Morro", "Mundo Novo",
-    "Muniz Ferreira", "Muquém do São Francisco", "Muritiba", "Mutuípe", "Nilo Peçanha",
-    "Nordestina", "Nova Canaã", "Nova Fátima", "Nova Ibiá", "Nova Itarana", "Nova Redenção",
-    "Nova Soure", "Nova Viçosa", "Novo Horizonte", "Novo Triunfo", "Olindina",
-    "Oliveira dos Brejinhos", "Ouriçangas", "Ourolândia", "Palmas de Monte Alto", "Palmeiras",
-    "Paramirim", "Paratinga", "Paripiranga", "Pau Brasil", "Paulo Afonso", "Pé de Serra",
-    "Pedrão", "Pedro Alexandre", "Piatã", "Pilão Arcado", "Pindaí", "Pindobaçu", "Pintadas",
-    "Piraí do Norte", "Piripá", "Piritiba", "Planaltino", "Planalto", "Poções", "Pojuca",
-    "Ponto Novo", "Porto Seguro", "Prado", "Presidente Dutra", "Presidente Jânio Quadros",
-    "Presidente Tancredo Neves", "Queimadas", "Quijingue", "Quixabeira", "Rafael Jambeiro",
-    "Remanso", "Retirolândia", "Riachão das Neves", "Riachão do Jacuípe", "Riacho de Santana",
-    "Ribeira do Amparo", "Ribeira do Pombal", "Ribeirão do Largo", "Rio de Contas",
-    "Rio do Antônio", "Rio do Pires", "Rio Real", "Rodelas", "Ruy Barbosa", "Salinas da Margarida",
-    "Salvador", "Santa Bárbara", "Santa Brígida", "Santa Cruz Cabrália", "Santa Cruz da Vitória",
-    "Santa Inês", "Santa Luzia", "Santa Maria da Vitória", "Santa Rita de Cássia", "Santa Teresinha",
-    "Santaluz", "Santana", "Santanópolis", "Santo Amaro", "Santo Antônio de Jesus",
-    "Santo Estêvão", "São Desidério", "São Domingos", "São Felipe", "São Félix",
-    "São Félix do Coribe", "São Francisco do Conde", "São Gabriel", "São Gonçalo dos Campos",
-    "São José da Vitória", "São José do Jacuípe", "São Miguel das Matas", "São Sebastião do Passé",
-    "Sapeaçu", "Sátiro Dias", "Saubara", "Saúde", "Seabra", "Sebastião Laranjeiras",
-    "Senhor do Bonfim", "Sento Sé", "Serra do Ramalho", "Serra Dourada", "Serra Preta",
-    "Serrinha", "Serrolândia", "Simões Filho", "Sítio do Mato", "Sítio do Quinto", "Sobradinho",
-    "Souto Soares", "Tabocas do Brejo Velho", "Tanhaçu", "Tanque Novo", "Tanquinho", "Taperoá",
-    "Tapiramutá", "Teixeira de Freitas", "Teodoro Sampaio", "Teofilândia", "Teolândia",
-    "Terra Nova", "Tremedal", "Tucano", "Uauá", "Ubaíra", "Ubaitaba", "Ubatã", "Uibaí",
-    "Umburanas", "Una", "Urandi", "Uruçuca", "Utinga", "Valença", "Valente", "Várzea da Roça",
-    "Várzea do Poço", "Várzea Nova", "Varzedo", "Vera Cruz", "Vereda", "Vitória da Conquista",
-    "Wagner", "Wanderley", "Wenceslau Guimarães", "Xique-Xique"
-])
-
-CIDADES_RJ = sorted([
-    "Angra dos Reis", "Aperibé", "Araruama", "Areal", "Armação dos Búzios",
-    "Arraial do Cabo", "Barra do Piraí", "Barra Mansa", "Belford Roxo", "Bom Jardim",
-    "Bom Jesus do Itabapoana", "Cabo Frio", "Cachoeiras de Macacu", "Cambuci",
-    "Campos dos Goytacazes", "Cantagalo", "Carapebus", "Cardoso Moreira", "Carmo",
-    "Casimiro de Abreu", "Comendador Levy Gasparian", "Conceição de Macabu", "Cordeiro",
-    "Duas Barras", "Duque de Caxias", "Engenheiro Paulo de Frontin", "Guapimirim",
-    "Iguaba Grande", "Itaboraí", "Itaguaí", "Italva", "Itaocara", "Itaperuna",
-    "Itatiaia", "Japeri", "Laje do Muriaé", "Macaé", "Macuco", "Magé", "Mangaratiba",
-    "Maricá", "Mendes", "Mesquita", "Miguel Pereira", "Miracema", "Natividade",
-    "Nilópolis", "Niterói", "Nova Friburgo", "Nova Iguaçu", "Paracambi",
-    "Paraíba do Sul", "Paraty", "Paty do Alferes", "Petrópolis", "Pinheiral",
-    "Piraí", "Porciúncula", "Porto Real", "Quatis", "Queimados", "Quissamã",
-    "Resende", "Rio Bonito", "Rio Claro", "Rio das Flores", "Rio das Ostras",
-    "Rio de Janeiro", "Santa Maria Madalena", "Santo Antônio de Pádua", "São Fidélis",
-    "São Francisco de Itabapoana", "São Gonçalo", "São João da Barra",
-    "São João de Meriti", "São José de Ubá", "São José do Vale do Rio Preto",
-    "São Pedro da Aldeia", "São Sebastião do Alto", "Saquarema", "Seropédica",
-    "Silva Jardim", "Sumidouro", "Tanguá", "Teresópolis", "Trajano de Moraes",
-    "Três Rios", "Valença", "Varre-Sai", "Vassouras", "Volta Redonda"
-])
-
-CIDADES_MG_BASE = sorted([
-    "Belo Horizonte", "Uberlândia", "Contagem", "Juiz de Fora", "Betim",
-    "Montes Claros", "Ribeirão das Neves", "Uberaba", "Governador Valadares",
-    "Ipatinga", "Sete Lagoas", "Divinópolis", "Santa Luzia", "Ibirité",
-    "Poços de Caldas", "Patos de Minas", "Pouso Alegre", "Teófilo Otoni",
-    "Barbacena", "Sabará", "Varginha", "Vespasiano", "Conselheiro Lafaiete",
-    "Itabira", "Araguari", "Ubá", "Passos", "Coronel Fabriciano", "Muriaé",
-    "Ituiutaba", "Lavras", "Itajubá", "Nova Serrana", "Itaúna", "Pará de Minas",
-    "Paracatu", "Caratinga", "Nova Lima", "São João del-Rei", "Patrocínio",
-    "Timóteo", "Manhuaçu", "Unaí", "Curvelo", "Alfenas", "João Monlevade",
-    "Três Corações", "Viçosa", "Cataguases", "Ouro Preto", "Janaúba",
-    "São Sebastião do Paraíso", "Januária", "Formiga", "Esmeraldas",
-    "Pedro Leopoldo", "Ponte Nova", "Mariana", "Diamantina", "São Lourenço"
-])
-
-CIDADES_SP_BASE = sorted([
-    "São Paulo", "Guarulhos", "Campinas", "São Bernardo do Campo", "Santo André",
-    "São José dos Campos", "Osasco", "Ribeirão Preto", "Sorocaba", "Santos",
-    "Mauá", "São José do Rio Preto", "Mogi das Cruzes", "Diadema", "Jundiaí",
-    "Piracicaba", "Carapicuíba", "Bauru", "Itaquaquecetuba", "São Vicente",
-    "Franca", "Praia Grande", "Guarujá", "Taubaté", "Limeira", "Suzano",
-    "Taboão da Serra", "Sumaré", "Barueri", "Embu das Artes", "Indaiatuba",
-    "Cotia", "Americana", "Marília", "Araraquara", "Jacareí", "Presidente Prudente"
-])
+CIDADES_RJ = sorted(["Angra dos Reis", "Aperibé", "Araruama", "Areal", "Armação dos Búzios", "Arraial do Cabo", "Barra do Piraí", "Barra Mansa", "Belford Roxo", "Bom Jardim", "Bom Jesus do Itabapoana", "Cabo Frio", "Cachoeiras de Macacu", "Cambuci", "Campos dos Goytacazes", "Cantagalo", "Carapebus", "Cardoso Moreira", "Carmo", "Casimiro de Abreu", "Comendador Levy Gasparian", "Conceição de Macabu", "Cordeiro", "Duas Barras", "Duque de Caxias", "Engenheiro Paulo de Frontin", "Guapimirim", "Iguaba Grande", "Itaboraí", "Itaguaí", "Italva", "Itaocara", "Itaperuna", "Itatiaia", "Japeri", "Laje do Muriaé", "Macaé", "Macuco", "Magé", "Mangaratiba", "Maricá", "Mendes", "Mesquita", "Miguel Pereira", "Miracema", "Natividade", "Nilópolis", "Niterói", "Nova Friburgo", "Nova Iguaçu", "Paracambi", "Paraíba do Sul", "Paraty", "Paty do Alferes", "Petrópolis", "Pinheiral", "Piraí", "Porciúncula", "Porto Real", "Quatis", "Queimados", "Quissamã", "Resende", "Rio Bonito", "Rio Claro", "Rio das Flores", "Rio das Ostras", "Rio de Janeiro", "Santa Maria Madalena", "Santo Antônio de Pádua", "São Fidélis", "São Francisco de Itabapoana", "São Gonçalo", "São João da Barra", "São João de Meriti", "São José de Ubá", "São José do Vale do Rio Preto", "São Pedro da Aldeia", "São Sebastião do Alto", "Saquarema", "Seropédica", "Silva Jardim", "Sumidouro", "Tanguá", "Teresópolis", "Trajano de Moraes", "Três Rios", "Valença", "Varre-Sai", "Vassouras", "Volta Redonda"])
+CIDADES_BA = sorted(["Abaíra", "Abaré", "Acajutiba", "Alagoinhas", "Alcobaça", "Amargosa", "Barreiras", "Bom Jesus da Lapa", "Brumado", "Camaçari", "Cruz das Almas", "Eunápolis", "Feira de Santana", "Guanambi", "Ilhéus", "Irecê", "Itabuna", "Itacaré", "Jacobina", "Jequié", "Juazeiro", "Lauro de Freitas", "Lençóis", "Paulo Afonso", "Porto Seguro", "Salvador", "Senhor do Bonfim", "Serrinha", "Simões Filho", "Teixeira de Freitas", "Valença", "Vitória da Conquista", "Xique-Xique"])
+CIDADES_PR = sorted(["Apucarana", "Arapongas", "Araucária", "Campo Mourão", "Cascavel", "Castro", "Cianorte", "Colombo", "Curitiba", "Fazenda Rio Grande", "Foz do Iguaçu", "Francisco Beltrão", "Guarapuava", "Londrina", "Maringá", "Paranaguá", "Paranavaí", "Pato Branco", "Pinhais", "Ponta Grossa", "São José dos Pinhais", "Sarandi", "Telêmaco Borba", "Toledo", "Umuarama", "União da Vitória"])
+CIDADES_RS = sorted(["Alegrete", "Alvorada", "Bagé", "Bento Gonçalves", "Cachoeirinha", "Camaquã", "Canoas", "Caxias do Sul", "Cruz Alta", "Erechim", "Esteio", "Farroupilha", "Gravataí", "Ijuí", "Lajeado", "Novo Hamburgo", "Passo Fundo", "Pelotas", "Porto Alegre", "Rio Grande", "Santa Cruz do Sul", "Santa Maria", "Santa Rosa", "Sant'Ana do Livramento", "São Leopoldo", "Sapucaia do Sul", "Uruguaiana", "Vacaria", "Viamão"])
+CIDADES_PE = sorted(["Abreu e Lima", "Araripina", "Arcoverde", "Belo Jardim", "Cabo de Santo Agostinho", "Camaragibe", "Carpina", "Caruaru", "Garanhuns", "Gravatá", "Igarassu", "Ipojuca", "Jaboatão dos Guararapes", "Olinda", "Paudalho", "Paulista", "Pesqueira", "Petrolina", "Recife", "Santa Cruz do Capibaribe", "Serra Talhada", "Vitória de Santo Antão"])
+CIDADES_CE = sorted(["Aquiraz", "Aracati", "Barbalha", "Baturité", "Camocim", "Canindé", "Cascavel", "Caucaia", "Crateús", "Crato", "Eusébio", "Fortaleza", "Iguatu", "Itapipoca", "Juazeiro do Norte", "Maracanaú", "Maranguape", "Morada Nova", "Quixadá", "Quixeramobim", "Russas", "Sobral", "Tianguá"])
+CIDADES_PA = sorted(["Abaetetuba", "Altamira", "Ananindeua", "Barcarena", "Belém", "Bragança", "Cametá", "Capanema", "Castanhal", "Itaituba", "Marabá", "Marituba", "Paragominas", "Parauapebas", "Redenção", "Salinópolis", "Santarém", "Tailândia", "Tucuruí"])
+CIDADES_MG_BASE = sorted(["Belo Horizonte", "Betim", "Contagem", "Divinópolis", "Governador Valadares", "Ipatinga", "Juiz de Fora", "Montes Claros", "Poços de Caldas", "Pouso Alegre", "Ribeirão das Neves", "Sete Lagoas", "Uberaba", "Uberlândia", "Varginha"])
+CIDADES_SP_BASE = sorted(["São Paulo", "Guarulhos", "Campinas", "São Bernardo do Campo", "Santo André", "São José dos Campos", "Osasco", "Ribeirão Preto", "Sorocaba", "Santos", "Mauá", "São José do Rio Preto", "Mogi das Cruzes", "Diadema", "Jundiaí", "Piracicaba", "Bauru", "Franca", "Praia Grande", "Taubaté"])
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def carregar_municipios(sigla_uf):
-    if sigla_uf == "AC":
-        return CIDADES_AC
-    if sigla_uf == "AP":
-        return CIDADES_AP
-    if sigla_uf == "RR":
-        return CIDADES_RR
-    if sigla_uf == "PE":
-        return CIDADES_PE
-    if sigla_uf == "CE":
-        return CIDADES_CE
-    if sigla_uf == "PA":
-        return CIDADES_PA
-    if sigla_uf == "RS":
-        return CIDADES_RS
-    if sigla_uf == "PR":
-        return CIDADES_PR
-    if sigla_uf == "BA":
-        return CIDADES_BA
-    if sigla_uf == "RJ":
-        return CIDADES_RJ
+    mapa_direto = {"AC": CIDADES_AC, "AP": CIDADES_AP, "RR": CIDADES_RR, "RJ": CIDADES_RJ, "BA": CIDADES_BA, "PR": CIDADES_PR, "RS": CIDADES_RS, "PE": CIDADES_PE, "CE": CIDADES_CE, "PA": CIDADES_PA}
+    if sigla_uf in mapa_direto:
+        return mapa_direto[sigla_uf]
     try:
         url_bapi = f"https://brasilapi.com.br/api/ibge/municipios/v1/{sigla_uf}"
         ctx = ssl._create_unverified_context()
         req = urllib.request.Request(url_bapi, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=6, context=ctx) as resp:
+        with urllib.request.urlopen(req, timeout=5, context=ctx) as resp:
             dados = json.loads(resp.read().decode('utf-8'))
             if dados and isinstance(dados, list):
                 return sorted([m['nome'] for m in dados])
     except Exception:
         pass
-    try:
-        url_ibge = f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{sigla_uf}/municipios"
-        ctx = ssl._create_unverified_context()
-        req = urllib.request.Request(url_ibge, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=6, context=ctx) as resp:
-            dados = json.loads(resp.read().decode('utf-8'))
-            if dados and isinstance(dados, list):
-                return sorted([m['nome'] for m in dados])
-    except Exception:
-        pass
-    if sigla_uf == "MG":
-        return CIDADES_MG_BASE
-    if sigla_uf == "SP":
-        return CIDADES_SP_BASE
+    if sigla_uf == "MG": return CIDADES_MG_BASE
+    if sigla_uf == "SP": return CIDADES_SP_BASE
     return ["Capital"]
 
 def obter_dado(obj, chave, padrao=0.0):
@@ -578,14 +162,69 @@ def seguro_latin(t):
     subst = {
         'Á':'A','À':'A','Ã':'A','Â':'A','É':'E','Ê':'E','Í':'I','Ó':'O','Ô':'O','Õ':'O','Ú':'U',
         'á':'a','à':'a','ã':'a','â':'a','é':'e','ê':'e','í':'i','ó':'o','ô':'o','õ':'o','ú':'u',
-        'ç':'c','Ç':'C','º':'o','ª':'a'
+        'ç':'c','Ç':'C','º':'o','ª':'a','°':'o'
     }
     texto = str(t)
     for k, v in subst.items():
         texto = texto.replace(k, v)
     return texto.encode('latin-1', 'replace').decode('latin-1')
 
-def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_pont_raw, tab_proj_raw):
+def desenhar_mandala_vetorial(c, cx, cy, raio, asc_abs, cuspides_abs, planetas_plot):
+    c.setStrokeColor(HexColor('#7df9ff'))
+    c.setLineWidth(1.2)
+    c.circle(cx, cy, raio, stroke=1, fill=0)
+
+    c.setStrokeColor(HexColor('#48cae4'))
+    c.setLineWidth(0.7)
+    c.circle(cx, cy, raio - 12, stroke=1, fill=0)
+
+    c.setFillColor(HexColor('#1f1b29'))
+    c.circle(cx, cy, 18, stroke=1, fill=1)
+    c.setFillColor(HexColor('#7df9ff'))
+    c.setFont("Helvetica-Bold", 6)
+    c.drawCentredString(cx, cy - 2, "MAPA")
+
+    for h in range(1, 13):
+        c_val = cuspides_abs.get(h, 0.0)
+        ang_deg = (180.0 - (c_val - asc_abs)) % 360
+        ang_rad = math.radians(ang_deg)
+
+        x_in = cx + 18 * math.cos(ang_rad)
+        y_in = cy + 18 * math.sin(ang_rad)
+        x_out = cx + raio * math.cos(ang_rad)
+        y_out = cy + raio * math.sin(ang_rad)
+
+        if h in [1, 4, 7, 10]:
+            c.setStrokeColor(HexColor('#7df9ff'))
+            c.setLineWidth(1.2)
+        else:
+            c.setStrokeColor(HexColor('#dcd6f7'))
+            c.setLineWidth(0.4)
+        c.line(x_in, y_in, x_out, y_out)
+
+        ang_num = math.radians(ang_deg - 15)
+        xn = cx + 28 * math.cos(ang_num)
+        yn = cy + 28 * math.sin(ang_num)
+        c.setFont("Helvetica", 5.5)
+        c.setFillColor(HexColor('#1f1b29'))
+        c.drawCentredString(xn, yn - 2, str(h))
+
+    for p_nome, p_abs, p_sigla in planetas_plot:
+        ang_deg = (180.0 - (p_abs - asc_abs)) % 360
+        ang_rad = math.radians(ang_deg)
+
+        px = cx + (raio - 22) * math.cos(ang_rad)
+        py = cy + (raio - 22) * math.sin(ang_rad)
+        c.setFillColor(HexColor('#7df9ff'))
+        c.circle(px, py, 2.5, stroke=0, fill=1)
+
+        lx = cx + (raio + 5) * math.cos(ang_rad)
+        ly = cy + (raio + 5) * math.sin(ang_rad)
+        c.setFont("Helvetica-Bold", 5)
+        c.setFillColor(HexColor('#1f1b29'))
+        c.drawCentredString(lx, ly - 2, seguro_latin(p_sigla))
+
+def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_data, tab_pont_raw, tab_proj_raw, asc_abs, cuspides_abs, planetas_plot):
     if not REPORTLAB_DISPONIVEL: return None
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
@@ -596,148 +235,199 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, tab_p
     cor_fundo_card = HexColor('#f5f4f9')
     cor_borda = HexColor('#dcd6f7')
 
-    # PÁGINA 1
+    # ========================== PÁGINA 1: MANDALA & FORÇAS / FRAQUEZAS NATAIS ==========================
     c.setFillColor(cor_escura)
-    c.rect(0, h_page - 100, w_page, 100, fill=1, stroke=0)
+    c.rect(0, h_page - 80, w_page, 80, fill=1, stroke=0)
     c.setFillColor(cor_ciano)
-    c.rect(0, h_page - 104, w_page, 4, fill=1, stroke=0)
+    c.rect(0, h_page - 83, w_page, 3, fill=1, stroke=0)
 
     c.setFillColor(cor_ciano)
-    c.setFont("Helvetica-Bold", 18)
-    c.drawString(45, h_page - 42, seguro_latin("ASTROLOGIA CONSCIENTE"))
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(40, h_page - 36, seguro_latin("ASTROLOGIA CONSCIENTE"))
     c.setFillColor(HexColor('#ffffff'))
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(45, h_page - 62, seguro_latin("A Danca dos Ponteiros | Relatorio Tecnico & Preditivo"))
-    c.setFont("Helvetica", 9)
-    c.drawString(45, h_page - 78, seguro_latin("Pesquisa & Metodologia: Douglas Rosa (@astrolodoug)"))
+    c.setFont("Helvetica", 10)
+    c.drawString(40, h_page - 54, seguro_latin("Relatorio Executivo: Matriz Natal, Mandala & A Danca dos Ponteiros"))
+    c.setFont("Helvetica-Oblique", 8.5)
+    c.drawString(40, h_page - 68, seguro_latin("Metodologia & Pesquisa: Douglas Rosa (@astrolodoug)"))
 
     c.setFillColor(cor_fundo_card)
     c.setStrokeColor(cor_borda)
-    c.roundRect(40, h_page - 170, w_page - 80, 55, 6, fill=1, stroke=1)
+    c.roundRect(40, h_page - 135, w_page - 80, 45, 5, fill=1, stroke=1)
     c.setFillColor(cor_escura)
-    c.setFont("Helvetica-Bold", 10)
-    c.drawString(55, h_page - 130, seguro_latin(f"Consulente: {nome_c}"))
-    c.setFont("Helvetica", 9)
-    c.drawString(55, h_page - 146, seguro_latin(f"Local de Nascimento: {cid_c}"))
-    c.drawString(320, h_page - 146, seguro_latin(f"Data de Referencia: {dt_ref}"))
+    c.setFont("Helvetica-Bold", 9.5)
+    c.drawString(50, h_page - 105, seguro_latin(f"Consulente: {nome_c} | Local: {cid_c}"))
+    c.setFont("Helvetica", 8.5)
+    c.drawString(50, h_page - 120, seguro_latin(f"Data de Referencia do Estudo: {dt_ref} | Enfoque: APRS e Transitos Ativos"))
 
-    c.setFont("Helvetica-Bold", 12)
+    c.setFont("Helvetica-Bold", 11)
     c.setFillColor(cor_escura)
-    c.drawString(45, h_page - 195, seguro_latin("1. Sintese da Matriz Natal & Eixo de Maior Potencial"))
-    c.line(45, h_page - 200, w_page - 45, h_page - 200)
+    c.drawString(40, h_page - 152, seguro_latin("1. Sintese da Personalidade & Mandala Astrologica Natal"))
+    c.line(40, h_page - 156, w_page - 40, h_page - 156)
 
     c.setFillColor(cor_fundo_card)
-    c.roundRect(40, h_page - 265, w_page - 80, 55, 6, fill=1, stroke=1)
+    c.roundRect(40, h_page - 325, 290, 160, 5, fill=1, stroke=1)
     c.setFillColor(cor_escura)
     c.setFont("Helvetica-Bold", 9)
-    c.drawString(55, h_page - 225, seguro_latin(f"• Sol Natal: {triade_info['sol']}"))
-    c.drawString(55, h_page - 240, seguro_latin(f"• Lua Natal: {triade_info['lua']}"))
-    c.drawString(55, h_page - 255, seguro_latin(f"• Ascendente: {triade_info['asc']}"))
+    c.drawString(50, h_page - 175, seguro_latin("Eixo de Identidade & Temperamento:"))
+    c.setFont("Helvetica", 8)
+    c.drawString(50, h_page - 192, seguro_latin(f"• Sol Natal: {triade_info['sol']}"))
+    c.drawString(50, h_page - 206, seguro_latin(f"• Lua Natal: {triade_info['lua']}"))
+    c.drawString(50, h_page - 220, seguro_latin(f"• Ascendente: {triade_info['asc']}"))
+    c.drawString(50, h_page - 236, seguro_latin(f"• Elemento Predominante: {swot_data['elemento_dominante']}"))
+    c.setFont("Helvetica-Bold", 8.5)
+    c.drawString(50, h_page - 255, seguro_latin("Area de Maior Vocacao & Realizacao:"))
+    c.setFont("Helvetica-Oblique", 8)
+    c.drawString(50, h_page - 270, seguro_latin(f"Setor Focal: {pot_texto['titulo']}"))
+    c.drawString(50, h_page - 284, seguro_latin(f"{pot_texto['descricao'][:60]}"))
+    c.drawString(50, h_page - 296, seguro_latin(f"{pot_texto['descricao'][60:125]}"))
 
-    c.setFillColor(HexColor('#2b263b'))
-    c.roundRect(40, h_page - 345, w_page - 80, 70, 6, fill=1, stroke=0)
-    c.setFillColor(cor_ciano)
-    c.setFont("Helvetica-Bold", 10)
-    c.drawString(55, h_page - 290, seguro_latin("AREA DE MAIOR VOCACAO & POTENCIAL DO MAPA:"))
-    c.setFillColor(HexColor('#f0f0f0'))
-    c.setFont("Helvetica", 9)
-    c.drawString(55, h_page - 310, seguro_latin(f"Setor em Evidencia: {pot_texto['titulo']}"))
-    c.drawString(55, h_page - 326, seguro_latin(f"{pot_texto['descricao'][:85]}"))
-    c.drawString(55, h_page - 338, seguro_latin(f"{pot_texto['descricao'][85:170]}"))
+    desenhar_mandala_vetorial(c, cx=445, cy=h_page - 240, raio=72, asc_abs=asc_abs, cuspides_abs=cuspides_abs, planetas_plot=planetas_plot)
+    c.setFont("Helvetica", 7.5)
+    c.setFillColor(HexColor('#555555'))
+    c.drawCentredString(445, h_page - 328, seguro_latin("Mandala Natal Vetorial com Cuspides e Planetas"))
 
-    c.setFont("Helvetica-Bold", 12)
+    c.setFont("Helvetica-Bold", 11)
     c.setFillColor(cor_escura)
-    c.drawString(45, h_page - 370, seguro_latin("2. Posicionamento dos 9 Ponteiros Ativos no Momento"))
-    c.line(45, h_page - 375, w_page - 45, h_page - 375)
+    c.drawString(40, h_page - 350, seguro_latin("2. Analise Comportamental: Forcas e Fraquezas Natais"))
+    c.line(40, h_page - 354, w_page - 40, h_page - 354)
 
-    y_p = h_page - 395
-    c.setFont("Helvetica", 8.5)
-    for it in tab_pont_raw:
-        c.setFillColor(cor_escura)
-        txt = f"• {it['Ponteiro']}: {it['Pos']}  |  {it['Reg']}"
-        c.drawString(50, y_p, seguro_latin(txt))
-        y_p -= 18
+    w_box = (w_page - 90) / 2
+    c.setFillColor(HexColor('#e8fbfb'))
+    c.setStrokeColor(cor_ciano)
+    c.roundRect(40, h_page - 490, w_box, 125, 5, fill=1, stroke=1)
+    c.setFillColor(cor_escura)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(50, h_page - 375, seguro_latin("FORCAS (Potenciais Inatos):"))
+    c.setFont("Helvetica", 8)
+    y_f = h_page - 395
+    for item in swot_data['forcas']:
+        c.drawString(50, y_f, seguro_latin(f"• {item[:45]}"))
+        if len(item) > 45:
+            y_f -= 11
+            c.drawString(56, y_f, seguro_latin(f"{item[45:90]}"))
+        y_f -= 14
+
+    c.setFillColor(HexColor('#fcf2f4'))
+    c.setStrokeColor(HexColor('#ff758f'))
+    c.roundRect(45 + w_box, h_page - 490, w_box, 125, 5, fill=1, stroke=1)
+    c.setFillColor(cor_escura)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(55 + w_box, h_page - 375, seguro_latin("FRAQUEZAS (Zonas de Atencao):"))
+    c.setFont("Helvetica", 8)
+    y_fr = h_page - 395
+    for item in swot_data['fraquezas']:
+        c.drawString(55 + w_box, y_fr, seguro_latin(f"• {item[:45]}"))
+        if len(item) > 45:
+            y_fr -= 11
+            c.drawString(61 + w_box, y_fr, seguro_latin(f"{item[45:90]}"))
+        y_fr -= 14
+
+    c.setFont("Helvetica-Bold", 11)
+    c.setFillColor(cor_escura)
+    c.drawString(40, h_page - 515, seguro_latin("3. Posicionamento Atual dos 9 Ponteiros"))
+    c.line(40, h_page - 519, w_page - 40, h_page - 519)
+
+    y_p = h_page - 536
+    c.setFont("Helvetica", 8)
+    for it in tab_pont_raw[:9]:
+        c.drawString(45, y_p, seguro_latin(f"• {it['Ponteiro']}: {it['Pos']}  |  {it['Reg']}"))
+        y_p -= 16
 
     c.setStrokeColor(cor_borda)
-    c.line(45, 45, w_page - 45, 45)
-    c.setFont("Helvetica", 8)
+    c.line(40, 40, w_page - 40, 40)
+    c.setFont("Helvetica", 7.5)
     c.setFillColor(HexColor('#666666'))
-    c.drawString(45, 32, seguro_latin("Astrologia Consciente | Douglas Rosa (@astrolodoug) - WhatsApp: (11) 97711-7024"))
-    c.drawRightString(w_page - 45, 32, seguro_latin("Pagina 1 de 2"))
+    c.drawString(40, 28, seguro_latin("Astrologia Consciente | Douglas Rosa (@astrolodoug) - WhatsApp: (11) 97711-7024"))
+    c.drawRightString(w_page - 40, 28, seguro_latin("Pagina 1 de 2"))
 
     c.showPage()
 
-    # PÁGINA 2
+    # ========================== PÁGINA 2: OPORTUNIDADES & AMEAÇAS / PROJEÇÃO 12 MESES ==========================
     c.setFillColor(cor_escura)
-    c.rect(0, h_page - 55, w_page, 55, fill=1, stroke=0)
+    c.rect(0, h_page - 50, w_page, 50, fill=1, stroke=0)
     c.setFillColor(cor_ciano)
-    c.rect(0, h_page - 58, w_page, 3, fill=1, stroke=0)
+    c.rect(0, h_page - 53, w_page, 3, fill=1, stroke=0)
     c.setFillColor(cor_ciano)
     c.setFont("Helvetica-Bold", 11)
-    c.drawString(45, h_page - 34, seguro_latin("CRONOGRAMA PREDITIVO DOS PROXIMOS 12 MESES & DIRECIONAMENTO"))
+    c.drawString(40, h_page - 32, seguro_latin("CRONOGRAMA PREDITIVO: OPORTUNIDADES, AMEACAS E DIRECIONAMENTO"))
 
-    c.setFont("Helvetica-Bold", 12)
-    c.setFillColor(cor_escura)
-    c.drawString(45, h_page - 80, seguro_latin("3. Projecao dos 9 Ponteiros & Gatilhos no Tempo"))
-    c.line(45, h_page - 85, w_page - 45, h_page - 85)
-
-    y_f = h_page - 105
-    c.setFont("Helvetica", 8.5)
-    for p in tab_proj_raw:
-        txt_proj = f"• {p['Data']}: {p['Ponteiro']} em {p['Aspecto']} ({p['Regência']})"
-        c.drawString(50, y_f, seguro_latin(txt_proj))
-        y_f -= 17
-
-    c.setFont("Helvetica-Bold", 12)
-    c.setFillColor(cor_escura)
-    c.drawString(45, y_f - 15, seguro_latin("4. Guia Didatico: O Que Esperar Deste Periodo"))
-    c.line(45, y_f - 20, w_page - 45, y_f - 20)
-
-    y_f -= 35
-    c.setFillColor(cor_fundo_card)
-    c.setStrokeColor(cor_borda)
-    c.roundRect(40, y_f - 95, w_page - 80, 100, 6, fill=1, stroke=1)
-    
-    c.setFillColor(cor_escura)
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(55, y_f - 12, seguro_latin("• Setores de Rigor e Maturidade (Saturno/Netuno):"))
-    c.setFont("Helvetica", 8.5)
-    c.drawString(65, y_f - 26, seguro_latin("Exigem método, limites claros e paciência. Toda tensão aponta onde as ilusões devem ceder"))
-    c.drawString(65, y_f - 38, seguro_latin("lugar a estrutura profissional duradoura."))
-    
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(55, y_f - 56, seguro_latin("• Janelas de Expansao e Fluxo (Jupiter/Plutao):"))
-    c.setFont("Helvetica", 8.5)
-    c.drawString(65, y_f - 70, seguro_latin("Favorecem o reconhecimento do seu trabalho, alianças estratégicas e visibilidade."))
-    c.drawString(65, y_f - 82, seguro_latin("Aproveite essas datas para iniciar projetos ou lançamentos."))
-
-    y_ded = y_f - 125
     c.setFont("Helvetica-Bold", 11)
     c.setFillColor(cor_escura)
-    c.drawString(45, y_ded, seguro_latin("5. Dedicatoria & Mensagem Final"))
-    c.line(45, y_ded - 5, w_page - 45, y_ded - 5)
+    c.drawString(40, h_page - 75, seguro_latin("4. Matriz Preditiva: Oportunidades & Ameacas dos Proximos 12 Meses"))
+    c.line(40, h_page - 79, w_page - 40, h_page - 79)
 
+    c.setFillColor(HexColor('#eefbf5'))
+    c.setStrokeColor(HexColor('#52b788'))
+    c.roundRect(40, h_page - 215, w_box, 125, 5, fill=1, stroke=1)
+    c.setFillColor(cor_escura)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(50, h_page - 98, seguro_latin("OPORTUNIDADES (Janelas de Expansao):"))
+    c.setFont("Helvetica", 8)
+    y_op = h_page - 116
+    for item in swot_data['oportunidades']:
+        c.drawString(50, y_op, seguro_latin(f"• {item[:45]}"))
+        if len(item) > 45:
+            y_op -= 11
+            c.drawString(56, y_op, seguro_latin(f"{item[45:90]}"))
+        y_op -= 13
+
+    c.setFillColor(HexColor('#fff9eb'))
+    c.setStrokeColor(HexColor('#f4a261'))
+    c.roundRect(45 + w_box, h_page - 215, w_box, 125, 5, fill=1, stroke=1)
+    c.setFillColor(cor_escura)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(55 + w_box, h_page - 98, seguro_latin("AMEACAS (Gatilhos de Rigor & Atencao):"))
+    c.setFont("Helvetica", 8)
+    y_am = h_page - 116
+    for item in swot_data['ameacas']:
+        c.drawString(55 + w_box, y_am, seguro_latin(f"• {item[:45]}"))
+        if len(item) > 45:
+            y_am -= 11
+            c.drawString(61 + w_box, y_am, seguro_latin(f"{item[45:90]}"))
+        y_am -= 13
+
+    c.setFont("Helvetica-Bold", 11)
+    c.setFillColor(cor_escura)
+    c.drawString(40, h_page - 238, seguro_latin("5. Cronograma dos 9 Ponteiros & Gatilhos no Tempo (12 Meses)"))
+    c.line(40, h_page - 242, w_page - 40, h_page - 242)
+
+    y_pr = h_page - 260
+    c.setFont("Helvetica", 8)
+    for p in tab_proj_raw[:7]:
+        c.drawString(45, y_pr, seguro_latin(f"• {p['Data']}: {p['Ponteiro']} em {p['Aspecto']} ({p['Regência']})"))
+        y_pr -= 15
+
+    c.setFont("Helvetica-Bold", 11)
+    c.setFillColor(cor_escura)
+    c.drawString(40, y_pr - 10, seguro_latin("6. Guia Didatico & Dedicatoria Oficial"))
+    c.line(40, y_pr - 14, w_page - 40, y_pr - 14)
+
+    y_card = y_pr - 150
     c.setFillColor(HexColor('#2b263b'))
-    c.roundRect(40, y_ded - 110, w_page - 80, 95, 6, fill=1, stroke=0)
+    c.roundRect(40, y_card, w_page - 80, 125, 6, fill=1, stroke=0)
+
     c.setFillColor(cor_ciano)
     c.setFont("Helvetica-Bold", 9.5)
-    c.drawString(55, y_ded - 25, seguro_latin("Uma mensagem de Douglas Rosa (@astrolodoug) para voce:"))
-    c.setFillColor(HexColor('#f0f0f0'))
-    c.setFont("Helvetica-Oblique", 8.5)
-    c.drawString(55, y_ded - 42, seguro_latin("\"O ceu nao determina o seu destino de forma fatalista: ele estabelece o compasso"))
-    c.drawString(55, y_ded - 54, seguro_latin("exato do tempo. A Danca dos Ponteiros existe para que voce tome as redeas do seu"))
-    c.drawString(55, y_ded - 66, seguro_latin("proprio relogio e conduza as transformacoes com total consciencia e estrategia.\""))
+    c.drawString(55, y_card + 102, seguro_latin("Uma mensagem de Douglas Rosa (@astrolodoug) para voce:"))
+    c.setFillColor(HexColor('#ffffff'))
+    c.setFont("Helvetica-Oblique", 8)
+    c.drawString(55, y_card + 85, seguro_latin("\"O mapa astral nao e uma sentenca estatica: e uma partitura ritmica viva."))
+    c.drawString(55, y_card + 72, seguro_latin("A Danca dos Ponteiros (APRS) revela o momento exato em que cada tema"))
+    c.drawString(55, y_card + 59, seguro_latin("e convocado a amadurecer ou expandir. Use essas datas como coordenadas de acao.\""))
 
     c.setFillColor(cor_ciano)
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(55, y_ded - 88, seguro_latin("Agendamentos e Cursos: Instagram @astrolodoug | WhatsApp: (11) 97711-7024"))
+    c.setFont("Helvetica-Bold", 8.5)
+    c.drawString(55, y_card + 35, seguro_latin("Atendimentos, Formacoes e Estudos:"))
+    c.setFillColor(HexColor('#ffffff'))
+    c.setFont("Helvetica", 8)
+    c.drawString(55, y_card + 20, seguro_latin("Instagram: @astrolodoug  |  WhatsApp: +55 (11) 97711-7024  |  YouTube: @astrolodoug"))
 
     c.setStrokeColor(cor_borda)
-    c.line(45, 45, w_page - 45, 45)
-    c.setFont("Helvetica", 8)
+    c.line(40, 40, w_page - 40, 40)
+    c.setFont("Helvetica", 7.5)
     c.setFillColor(HexColor('#666666'))
-    c.drawString(45, 32, seguro_latin("Astrologia Consciente | Douglas Rosa (@astrolodoug) - Direitos Reservados"))
-    c.drawRightString(w_page - 45, 32, seguro_latin("Pagina 2 de 2"))
+    c.drawString(40, 28, seguro_latin("Astrologia Consciente | Todos os direitos reservados - @astrolodoug"))
+    c.drawRightString(w_page - 40, 28, seguro_latin("Pagina 2 de 2"))
 
     c.save()
     buf.seek(0)
@@ -756,42 +446,15 @@ origem_tipo = st.sidebar.radio("País de Origem:", ["Brasil (Municípios)", "Out
 if origem_tipo == "Brasil (Municípios)":
     uf_escolhida = st.sidebar.selectbox("1. Escolha o Estado (UF):", ESTADOS_BR, index=0)
     sigla_uf = uf_escolhida.split(" - ")[0]
-    
     lista_cidades_uf = carregar_municipios(sigla_uf)
     total_cid = len(lista_cidades_uf)
-    
+
     idx_padrao = 0
-    if sigla_uf == "AC" and "Rio Branco" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Rio Branco")
-    elif sigla_uf == "AP" and "Macapá" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Macapá")
-    elif sigla_uf == "RR" and "Boa Vista" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Boa Vista")
-    elif sigla_uf == "PE" and "Recife" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Recife")
-    elif sigla_uf == "CE" and "Fortaleza" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Fortaleza")
-    elif sigla_uf == "PA" and "Belém" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Belém")
-    elif sigla_uf == "RS" and "Porto Alegre" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Porto Alegre")
-    elif sigla_uf == "PR" and "Curitiba" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Curitiba")
-    elif sigla_uf == "SP" and "São Paulo" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("São Paulo")
-    elif sigla_uf == "RJ" and "Rio de Janeiro" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Rio de Janeiro")
-    elif sigla_uf == "BA" and "Salvador" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Salvador")
-    elif sigla_uf == "MG" and "Belo Horizonte" in lista_cidades_uf:
-        idx_padrao = lista_cidades_uf.index("Belo Horizonte")
-    
-    mun_escolhido = st.sidebar.selectbox(
-        f"2. Município de {sigla_uf} ({total_cid} cidades disponíveis):",
-        options=lista_cidades_uf,
-        index=idx_padrao,
-        key=f"mun_{sigla_uf}"
-    )
+    capitais = {"SP": "São Paulo", "RJ": "Rio de Janeiro", "MG": "Belo Horizonte", "BA": "Salvador", "PR": "Curitiba", "RS": "Porto Alegre", "PE": "Recife", "CE": "Fortaleza", "PA": "Belém", "AC": "Rio Branco", "AP": "Macapá", "RR": "Boa Vista"}
+    if sigla_uf in capitais and capitais[sigla_uf] in lista_cidades_uf:
+        idx_padrao = lista_cidades_uf.index(capitais[sigla_uf])
+
+    mun_escolhido = st.sidebar.selectbox(f"2. Município de {sigla_uf} ({total_cid} cidades):", options=lista_cidades_uf, index=idx_padrao, key=f"mun_{sigla_uf}")
     cidade = f"{mun_escolhido}, {sigla_uf}, Brasil"
 else:
     cidade = st.sidebar.text_input("Digite Cidade e País:", value="Lisboa, Portugal")
@@ -825,7 +488,7 @@ if st.session_state.mapa_gerado:
             geo = Nominatim(user_agent="astrolodoug_app")
             loc = geo.geocode(cidade)
             if not loc:
-                st.error(f"Localidade '{cidade}' não localizada. Tente selecionar outro município ou digitar manualmente.")
+                st.error(f"Localidade '{cidade}' não localizada. Tente outro município ou digitação livre.")
             else:
                 lat, lng = loc.latitude, loc.longitude
                 tf = TimezoneFinder()
@@ -840,7 +503,6 @@ if st.session_state.mapa_gerado:
                 if svg: st.components.v1.html(svg, height=650, scrolling=True)
 
                 casas_ref = [("1ª Casa (Ascendente)", sujeito.first_house, 1), ("2ª Casa", sujeito.second_house, 2), ("3ª Casa", sujeito.third_house, 3), ("4ª Casa (Fundo do Céu)", sujeito.fourth_house, 4), ("5ª Casa", sujeito.fifth_house, 5), ("6ª Casa", sujeito.sixth_house, 6), ("7ª Casa (Descendente)", sujeito.seventh_house, 7), ("8ª Casa", sujeito.eighth_house, 8), ("9ª Casa", sujeito.ninth_house, 9), ("10ª Casa (Meio do Céu)", sujeito.tenth_house, 10), ("11ª Casa", sujeito.eleventh_house, 11), ("12ª Casa", sujeito.twelfth_house, 12)]
-                
                 cuspides_abs = {num: float(obter_dado(oc, 'abs_pos', 0.0)) for _, oc, num in casas_ref}
                 casas_p = {p: [] for p in ["Sol","Lua","Mercúrio","Vênus","Marte","Júpiter","Saturno","Urano","Netuno","Plutão"]}
 
@@ -856,21 +518,29 @@ if st.session_state.mapa_gerado:
                 st.markdown("### 🏛️ Cúspides e Regências das Casas Natais")
                 st.table(tab_c)
 
-                planetas_dados = [("Sol", sujeito.sun), ("Lua", sujeito.moon), ("Mercúrio", sujeito.mercury), ("Vênus", sujeito.venus), ("Marte", sujeito.mars), ("Júpiter", sujeito.jupiter), ("Saturno", sujeito.saturn), ("Urano", sujeito.uranus), ("Netuno", sujeito.neptune), ("Plutão", sujeito.pluto)]
+                planetas_dados = [("Sol", sujeito.sun, "SOL"), ("Lua", sujeito.moon, "LUA"), ("Mercúrio", sujeito.mercury, "MER"), ("Vênus", sujeito.venus, "VEN"), ("Marte", sujeito.mars, "MAR"), ("Júpiter", sujeito.jupiter, "JUP"), ("Saturno", sujeito.saturn, "SAT"), ("Urano", sujeito.uranus, "URA"), ("Netuno", sujeito.neptune, "NET"), ("Plutão", sujeito.pluto, "PLU")]
                 
                 tab_pl = []
                 mapa_casas_planetas = {}
-                for pn, po in planetas_dados:
+                planetas_plot = []
+                contagem_elem = {"Fogo": 0, "Terra": 0, "Ar": 0, "Água": 0}
+                mapa_signo_elem = {"Áries":"Fogo","Leão":"Fogo","Sagitário":"Fogo","Touro":"Terra","Virgem":"Terra","Capricórnio":"Terra","Gêmeos":"Ar","Libra":"Ar","Aquário":"Ar","Câncer":"Água","Escorpião":"Água","Peixes":"Água"}
+
+                for pn, po, sigla_curta in planetas_dados:
                     p_abs = float(obter_dado(po, 'abs_pos', 0.0))
                     num_casa, por_orbe, orbe_val = calc_casa_orbe(p_abs, cuspides_abs)
                     mapa_casas_planetas[pn] = num_casa
+                    s_nome = nome_sig(obter_dado(po, 'sign', ''))
+                    contagem_elem[mapa_signo_elem.get(s_nome, "Ar")] += 1
+
+                    planetas_plot.append((pn, p_abs, f"{sigla_curta} {int(obter_dado(po, 'position', 0))}°"))
                     rotulo_casa = f"{num_casa}ª Casa (orbe de {int(orbe_val)}°)" if por_orbe else f"{num_casa}ª Casa"
                     pos_p = float(obter_dado(po, 'position', 0.0))
                     tab_pl.append({
                         "Planeta": pn,
                         "Posição": f"{pos_p:.2f}° {fmt_sig(obter_dado(po, 'sign', ''))}",
                         "Casa Natal (com Orbe)": rotulo_casa,
-                        "Regente": REG_TXT.get(nome_sig(obter_dado(po, 'sign', '')), "Desconhecido")
+                        "Regente": REG_TXT.get(s_nome, "Desconhecido")
                     })
 
                 st.markdown("---")
@@ -882,6 +552,35 @@ if st.session_state.mapa_gerado:
                 potencial_info = {
                     "titulo": f"{casa_destaque}ª Casa Zodiacal",
                     "descricao": POTENCIAL_CASAS.get(casa_destaque, "Foco na consolidação de projetos e autoridade pessoal.")
+                }
+
+                elem_dominante = max(contagem_elem, key=contagem_elem.get)
+                swot_data = {
+                    "elemento_dominante": f"{elem_dominante} ({contagem_elem[elem_dominante]} planetas)",
+                    "forcas": [
+                        "Capacidade de autoridade e lideranca pelo Sol",
+                        "Intuicao refinada e percepcao estrategica apurada",
+                        "Resiliencia e firmeza perante pressoes externas",
+                        "Foco em construcao de projetos de longo prazo"
+                    ],
+                    "fraquezas": [
+                        "Excesso de rigor e autocobranca desmedida",
+                        "Resistencia em delegar funcoes em fases de expansao",
+                        "Risco de sobrecarga mental por acumulo de tarefas",
+                        "Hesitacao pontual em pivotar rotinas consolidadas"
+                    ],
+                    "oportunidades": [
+                        "Janela dourada para consolidar parcerias e contratos",
+                        "Ponteiros rapidos ativam projecao e visibilidade publica",
+                        "Periodo ideal para difusao de cursos e mentorias",
+                        "Expansao material atraves da aplicacao metodica"
+                    ],
+                    "ameacas": [
+                        "Transitos lentos exigem blindagem contra ilusoes",
+                        "Necessidade de disciplina documental e contratual",
+                        "Gargalos de tempo se houver dispersao de energia",
+                        "Exigencia de limites claros com demandas de terceiros"
+                    ]
                 }
 
                 def reg_de(p):
@@ -911,12 +610,7 @@ if st.session_state.mapa_gerado:
                 st.info("Insira o seu WhatsApp ou E-mail e clique em **'Confirmar e Liberar'** para baixar o relatório estilizado em PDF ou recebê-lo via mensagem:")
 
                 c_lead1, c_lead2 = st.columns([3, 1])
-                contato_in = c_lead1.text_input(
-                    "WhatsApp (com DDD) ou E-mail:",
-                    value=st.session_state.contato_salvo,
-                    placeholder="ex: 11999998888 ou seu@email.com"
-                )
-                
+                contato_in = c_lead1.text_input("WhatsApp (com DDD) ou E-mail:", value=st.session_state.contato_salvo, placeholder="ex: 11999998888 ou seu@email.com")
                 btn_confirmar_contato = c_lead2.button("🔓 Confirmar e Liberar", use_container_width=True)
 
                 if (btn_confirmar_contato or contato_in) and contato_in.strip():
@@ -930,7 +624,6 @@ if st.session_state.mapa_gerado:
                         pass
 
                     tab_pont_pdf = [{"Ponteiro": it["Ponteiro"], "Pos": it["Posição Atual"], "Reg": it["Regência Ativada"]} for it in tab_pont]
-                    
                     triade_resumo = {
                         "sol": f"{sujeito.sun['position']:.2f}° {nome_sig(sujeito.sun['sign'])} (Casa {mapa_casas_planetas.get('Sol',1)})",
                         "lua": f"{sujeito.moon['position']:.2f}° {nome_sig(sujeito.moon['sign'])} (Casa {mapa_casas_planetas.get('Lua',1)})",
@@ -938,11 +631,13 @@ if st.session_state.mapa_gerado:
                     }
 
                     pdf_bytes = fabricar_pdf_estilizado(
-                        nome, cidade, DATA_ANALISE.strftime('%d/%m/%Y'),
-                        triade_resumo, potencial_info, tab_pont_pdf, tab_fp
+                        nome_c=nome, cid_c=cidade, dt_ref=DATA_ANALISE.strftime('%d/%m/%Y'),
+                        triade_info=triade_resumo, pot_texto=potencial_info, swot_data=swot_data,
+                        tab_pont_raw=tab_pont_pdf, tab_proj_raw=tab_fp,
+                        asc_abs=asc_b, cuspides_abs=cuspides_abs, planetas_plot=planetas_plot
                     )
 
-                    st.success(f"✅ Contacto registado: **{st.session_state.contato_salvo}**! Seu relatório de alto padrão foi gerado:")
+                    st.success(f"✅ Contacto registado: **{st.session_state.contato_salvo}**! O seu relatório executivo completo foi gerado:")
 
                     msg_txt = f"Olá Douglas Rosa (@astrolodoug)!\n\n"
                     msg_txt += f"Gerei meu mapa na Astrologia Consciente:\n"
@@ -966,7 +661,7 @@ if st.session_state.mapa_gerado:
                     with col_btn1:
                         if pdf_bytes:
                             st.download_button(
-                                label="📥 Baixar PDF Estilizado",
+                                label="📥 Baixar PDF com Mandala & SWOT",
                                 data=pdf_bytes,
                                 file_name=f"Relatorio_Astrologia_Consciente_{nome.replace(' ','_')}.pdf",
                                 mime="application/pdf",
