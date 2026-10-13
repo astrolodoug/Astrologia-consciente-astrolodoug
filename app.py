@@ -251,13 +251,18 @@ def svg_mandala(subj):
     except Exception:
         return None
 
-# ==================== CARREGAMENTO LOCAL DA FONTE DEJAVU ====================
+# ==================== CARREGAMENTO LOCAL DA FONTE DEJAVU (BLINDADO) ====================
 FONTE_UNICODE_NOME = "Helvetica"
 FONTE_BOLD_NOME = "Helvetica-Bold"
+FONTE_OBLIQUE_NOME = "Helvetica-Oblique"
+FONTE_REGULAR = "Helvetica"
+FONTE_BOLD = "Helvetica-Bold"
+FONTE_OBLIQUE = "Helvetica-Oblique"
 UNICODE_ATIVA = False
 
 def inicializar_fonte_dejavu():
-    global FONTE_UNICODE_NOME, FONTE_BOLD_NOME, UNICODE_ATIVA
+    global FONTE_UNICODE_NOME, FONTE_BOLD_NOME, FONTE_OBLIQUE_NOME
+    global FONTE_REGULAR, FONTE_BOLD, FONTE_OBLIQUE, UNICODE_ATIVA
     if not REPORTLAB_DISPONIVEL:
         return
     try:
@@ -265,14 +270,26 @@ def inicializar_fonte_dejavu():
         if font_path and os.path.exists(font_path):
             pdfmetrics.registerFont(TTFont("DejaVuLocal", font_path))
             FONTE_UNICODE_NOME = "DejaVuLocal"
+            FONTE_REGULAR = "DejaVuLocal"
             UNICODE_ATIVA = True
 
         bold_path = fm.findfont('DejaVu Sans:weight=bold')
         if bold_path and os.path.exists(bold_path):
             pdfmetrics.registerFont(TTFont("DejaVuLocal-Bold", bold_path))
             FONTE_BOLD_NOME = "DejaVuLocal-Bold"
+            FONTE_BOLD = "DejaVuLocal-Bold"
         elif UNICODE_ATIVA:
             FONTE_BOLD_NOME = "DejaVuLocal"
+            FONTE_BOLD = "DejaVuLocal"
+
+        oblique_path = fm.findfont('DejaVu Sans:style=oblique')
+        if oblique_path and os.path.exists(oblique_path):
+            pdfmetrics.registerFont(TTFont("DejaVuLocal-Oblique", oblique_path))
+            FONTE_OBLIQUE_NOME = "DejaVuLocal-Oblique"
+            FONTE_OBLIQUE = "DejaVuLocal-Oblique"
+        elif UNICODE_ATIVA:
+            FONTE_OBLIQUE_NOME = "DejaVuLocal"
+            FONTE_OBLIQUE = "DejaVuLocal"
     except Exception:
         pass
 
@@ -445,7 +462,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.drawString(40, h_page - 36, seguro_texto("ASTROLOGIA CONSCIENTE"))
     c.setFont(FONTE_UNICODE_NOME, 9.5)
     c.drawString(40, h_page - 52, seguro_texto("Relatório Executivo: Matriz Natal, Mandala & A Dança dos Ponteiros"))
-    c.setFont(FONTE_UNICODE_NOME, 8)
+    c.setFont(FONTE_OBLIQUE_NOME, 8)
     c.drawString(40, h_page - 66, seguro_texto("Pesquisa e Metodologia: Douglas Rosa (@astrolodoug)"))
 
     c.setFillColor(cor_fundo_card)
@@ -488,7 +505,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFillColor(cor_azul_escuro)
     c.setFont(FONTE_BOLD_NOME, 8.5)
     c.drawString(50, h_page - 275, seguro_texto("Área de Maior Vocação & Potencial:"))
-    c.setFont(FONTE_UNICODE_NOME, 8)
+    c.setFont(FONTE_OBLIQUE_NOME, 8)
     c.setFillColor(HexColor('#2b263b'))
     c.drawString(50, h_page - 290, seguro_texto(f"Setor Focal: {pot_texto['titulo']}"))
     linhas_pot = textwrap.wrap(pot_texto['descricao'], width=48)
@@ -654,7 +671,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFont(FONTE_BOLD_NOME, 9.5)
     c.drawString(55, y_card + 102, seguro_texto("Uma mensagem de Douglas Rosa (@astrolodoug) para você:"))
     c.setFillColor(HexColor('#ffffff'))
-    c.setFont(FONTE_OBLIQUE, 8)
+    c.setFont(FONTE_OBLIQUE_NOME, 8)
     c.drawString(55, y_card + 85, seguro_texto('"O mapa astral não é uma sentença estática: é uma partitura rítmica viva.'))
     c.drawString(55, y_card + 72, seguro_texto('A Dança dos Ponteiros (APRS) revela o momento exato em que cada tema'))
     c.drawString(55, y_card + 59, seguro_texto('é convocado a amadurecer ou expandir. Use essas datas como coordenadas de ação."'))
