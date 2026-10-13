@@ -4,4 +4,5 @@ geopy
 timezonefinder
 pytz
 reportlab
-svglib
+matplotlib
+numpy
