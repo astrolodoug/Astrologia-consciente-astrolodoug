@@ -113,6 +113,37 @@ ESTADOS_BR = [
     "DF - Distrito Federal", "MS - Mato Grosso do Sul", "SE - Sergipe", "RO - Rondônia", "TO - Tocantins"
 ]
 
+# COORDENADAS E FUSOS DAS CAPITAIS PARA CONTINGÊNCIA INSTANTÂNEA
+COODS_CAPITAIS = {
+    "SP": (-23.5505, -46.6333, "America/Sao_Paulo"),
+    "RJ": (-22.9068, -43.1729, "America/Sao_Paulo"),
+    "MG": (-19.9167, -43.9345, "America/Sao_Paulo"),
+    "BA": (-12.9777, -38.5016, "America/Bahia"),
+    "PR": (-25.4284, -49.2733, "America/Sao_Paulo"),
+    "RS": (-30.0346, -51.2177, "America/Sao_Paulo"),
+    "PE": (-8.0476, -34.8770, "America/Recife"),
+    "CE": (-3.7172, -38.5433, "America/Fortaleza"),
+    "PA": (-1.4558, -48.4902, "America/Belem"),
+    "AC": (-9.9753, -67.8249, "America/Rio_Branco"),
+    "AP": (0.0355, -51.0705, "America/Belem"),
+    "RR": (2.8235, -60.6758, "America/Boa_Vista"),
+    "SC": (-27.5954, -48.5480, "America/Sao_Paulo"),
+    "GO": (-16.6869, -49.2648, "America/Sao_Paulo"),
+    "MA": (-2.5307, -44.3068, "America/Fortaleza"),
+    "AM": (-3.1190, -60.0217, "America/Manaus"),
+    "ES": (-20.3155, -40.3128, "America/Sao_Paulo"),
+    "PB": (-7.1195, -34.8450, "America/Fortaleza"),
+    "RN": (-5.7945, -35.2110, "America/Fortaleza"),
+    "MT": (-15.6014, -56.0979, "America/Cuiaba"),
+    "AL": (-9.6658, -35.7351, "America/Maceio"),
+    "PI": (-5.0920, -42.8038, "America/Fortaleza"),
+    "DF": (-15.7975, -47.8919, "America/Sao_Paulo"),
+    "MS": (-20.4697, -54.6201, "America/Campo_Grande"),
+    "SE": (-10.9472, -37.0731, "America/Maceio"),
+    "RO": (-8.7619, -63.9039, "America/Porto_Velho"),
+    "TO": (-10.1844, -48.3336, "America/Araguaina")
+}
+
 CIDADES_AC = sorted(["Acrelândia", "Assis Brasil", "Brasiléia", "Bujari", "Capixaba", "Cruzeiro do Sul", "Epitaciolândia", "Feijó", "Jordão", "Mâncio Lima", "Manoel Urbano", "Marechal Thaumaturgo", "Plácido de Castro", "Porto Acre", "Porto Walter", "Rio Branco", "Rodrigues Alves", "Santa Rosa do Purus", "Sena Madureira", "Senador Guiomard", "Tarauacá", "Xapuri"])
 CIDADES_AP = sorted(["Amapá", "Calçoene", "Cutias", "Ferreira Gomes", "Itaubal", "Laranjal do Jari", "Macapá", "Mazagão", "Oiapoque", "Pedra Branca do Amapari", "Porto Grande", "Pracuúba", "Santana", "Serra do Navio", "Tartarugalzinho", "Vitória do Jari"])
 CIDADES_RR = sorted(["Alto Alegre", "Amajari", "Boa Vista", "Bonfim", "Cantá", "Caracaraí", "Caroebe", "Iracema", "Mucajaí", "Normandia", "Pacaraima", "Rorainópolis", "São João da Baliza", "São Luiz", "Uiramutã"])
@@ -144,6 +175,44 @@ def carregar_municipios(sigla_uf):
     if sigla_uf == "MG": return CIDADES_MG_BASE
     if sigla_uf == "SP": return CIDADES_SP_BASE
     return ["Capital"]
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def obter_geolocalizacao_segura(cidade_str, sigla_uf=""):
+    # 1. Se for uma das capitais conhecidas, obtém imediatamente da memória sem fazer requisição de rede
+    nome_puro = cidade_str.split(",")[0].strip().lower()
+    capitais_nomes = {
+        "são paulo": "SP", "sao paulo": "SP", "rio de janeiro": "RJ", "belo horizonte": "MG",
+        "salvador": "BA", "curitiba": "PR", "porto alegre": "RS", "recife": "PE",
+        "fortaleza": "CE", "belém": "PA", "belem": "PA", "rio branco": "AC",
+        "macapá": "AP", "macapa": "AP", "boa vista": "RR", "florianópolis": "SC",
+        "goiânia": "GO", "são luís": "MA", "manaus": "AM", "vitória": "ES",
+        "joão pessoa": "PB", "natal": "RN", "cuiabá": "MT", "maceió": "AL",
+        "teresina": "PI", "brasília": "DF", "brasilia": "DF", "campo grande": "MS",
+        "aracaju": "SE", "porto velho": "RO", "palmas": "TO"
+    }
+    if nome_puro in capitais_nomes:
+        uf_ref = capitais_nomes[nome_puro]
+        if uf_ref in COODS_CAPITAIS:
+            lat, lng, tz = COODS_CAPITAIS[uf_ref]
+            return float(lat), float(lng), tz
+
+    # 2. Consulta o serviço com limite de espera seguro de 12 segundos
+    try:
+        geo = Nominatim(user_agent="astrologia_consciente_douglas_v2", timeout=12)
+        loc = geo.geocode(cidade_str)
+        if loc:
+            tf = TimezoneFinder()
+            tz_str = tf.timezone_at(lng=loc.longitude, lat=loc.latitude) or "America/Sao_Paulo"
+            return float(loc.latitude), float(loc.longitude), tz_str
+    except Exception:
+        pass
+
+    # 3. Contingência garantida com base no estado selecionado
+    if sigla_uf in COODS_CAPITAIS:
+        lat, lng, tz = COODS_CAPITAIS[sigla_uf]
+        return float(lat), float(lng), tz
+
+    return -23.5505, -46.6333, "America/Sao_Paulo"
 
 def obter_dado(obj, chave, padrao=0.0):
     if isinstance(obj, dict): return obj.get(chave, padrao)
@@ -233,7 +302,7 @@ def desenhar_marcador(c, x, y, cor=HexColor('#0d47a1'), raio=2.5):
     p.close()
     c.drawPath(p, fill=1, stroke=0)
 
-# ==================== GERADOR DA DICA DO DIA (CORRIGIDO) ====================
+# ==================== GERADOR DA DICA DO DIA ====================
 def calcular_bussola_do_dia(dt_analise, tab_pont, trans_atuais):
     p_focal = tab_pont[0]['Ponteiro'] if tab_pont else "Ponteiro Solar"
 
@@ -610,7 +679,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFont(FONTE_BOLD_NOME, 8.5)
     c.drawString(55, y_card + 35, seguro_texto("Atendimentos, Formações e Estudos:"))
     c.setFillColor(HexColor('#ffffff'))
-    c.setFont(FONTE_REGULAR, 8)
+    c.setFont(FONTE_UNICODE_NOME, 8)
     c.drawString(55, y_card + 20, seguro_texto("Instagram: @astrolodoug  |  WhatsApp: +55 (11) 97711-7024  |  YouTube: @astrolodoug"))
 
     c.setStrokeColor(cor_borda)
@@ -658,6 +727,7 @@ if origem_tipo == "Brasil (Municípios)":
     cidade = f"{mun_escolhido}, {sigla_uf}, Brasil"
 else:
     cidade = st.sidebar.text_input("Digite Cidade e País:", value="Lisboa, Portugal")
+    sigla_uf = ""
 
 st.sidebar.markdown("---")
 ano = st.sidebar.number_input("Ano", 1900, 2100, 1989)
@@ -685,248 +755,242 @@ st.sidebar.link_button("▶️ Acessar Canal no YouTube", "https://youtube.com/@
 if st.session_state.mapa_gerado:
     with st.spinner("A processar cálculos astrológicos..."):
         try:
-            geo = Nominatim(user_agent="astrolodoug_app")
-            loc = geo.geocode(cidade)
-            if not loc:
-                st.error(f"Localidade '{cidade}' não localizada. Tente outro município ou digitação livre.")
-            else:
-                lat, lng = loc.latitude, loc.longitude
-                tf = TimezoneFinder()
-                tz_str = tf.timezone_at(lng=lng, lat=lat) or "UTC"
+            # GEOLOCALIZAÇÃO ROBUSTA COM CONTINGÊNCIA INSTANTÂNEA
+            lat, lng, tz_str = obter_geolocalizacao_segura(cidade, sigla_uf)
 
-                sujeito = AstrologicalSubjectFactory.from_birth_data(name=nome, year=int(ano), month=int(mes), day=int(dia), hour=int(hora), minute=int(minuto), lat=float(lat), lng=float(lng), tz_str=tz_str)
-                st.success(f"Mapa gerado: {nome} ({cidade}) | Data base: {DATA_ANALISE.strftime('%d/%m/%Y')}")
+            sujeito = AstrologicalSubjectFactory.from_birth_data(name=nome, year=int(ano), month=int(mes), day=int(dia), hour=int(hora), minute=int(minuto), lat=float(lat), lng=float(lng), tz_str=tz_str)
+            st.success(f"Mapa gerado: {nome} ({cidade}) | Data base: {DATA_ANALISE.strftime('%d/%m/%Y')}")
 
-                casas_ref = [("1ª Casa (Ascendente)", sujeito.first_house, 1), ("2ª Casa", sujeito.second_house, 2), ("3ª Casa", sujeito.third_house, 3), ("4ª Casa (Fundo do Céu)", sujeito.fourth_house, 4), ("5ª Casa", sujeito.fifth_house, 5), ("6ª Casa", sujeito.sixth_house, 6), ("7ª Casa (Descendente)", sujeito.seventh_house, 7), ("8ª Casa", sujeito.eighth_house, 8), ("9ª Casa", sujeito.ninth_house, 9), ("10ª Casa (Meio do Céu)", sujeito.tenth_house, 10), ("11ª Casa", sujeito.eleventh_house, 11), ("12ª Casa", sujeito.twelfth_house, 12)]
-                cuspides_abs = {num: float(obter_dado(oc, 'abs_pos', 0.0)) for _, oc, num in casas_ref}
-                casas_p = {p: [] for p in ["Sol","Lua","Mercúrio","Vênus","Marte","Júpiter","Saturno","Urano","Netuno","Plutão"]}
+            casas_ref = [("1ª Casa (Ascendente)", sujeito.first_house, 1), ("2ª Casa", sujeito.second_house, 2), ("3ª Casa", sujeito.third_house, 3), ("4ª Casa (Fundo do Céu)", sujeito.fourth_house, 4), ("5ª Casa", sujeito.fifth_house, 5), ("6ª Casa", sujeito.sixth_house, 6), ("7ª Casa (Descendente)", sujeito.seventh_house, 7), ("8ª Casa", sujeito.eighth_house, 8), ("9ª Casa", sujeito.ninth_house, 9), ("10ª Casa (Meio do Céu)", sujeito.tenth_house, 10), ("11ª Casa", sujeito.eleventh_house, 11), ("12ª Casa", sujeito.twelfth_house, 12)]
+            cuspides_abs = {num: float(obter_dado(oc, 'abs_pos', 0.0)) for _, oc, num in casas_ref}
+            casas_p = {p: [] for p in ["Sol","Lua","Mercúrio","Vênus","Marte","Júpiter","Saturno","Urano","Netuno","Plutão"]}
 
-                tab_c = []
-                for nc, oc, num in casas_ref:
-                    sn = nome_sig(obter_dado(oc, 'sign', ''))
-                    for r in REGENTES.get(sn, []):
-                        if r in casas_p: casas_p[r].append(f"Casa {num}")
-                    pos_c = float(obter_dado(oc, 'position', 0.0))
-                    tab_c.append({"Casa Astrológica": nc, "Cúspide": f"{pos_c:.2f}° {fmt_sig(sn)}", "Regentes": REG_TXT.get(sn, "Desconhecido")})
+            tab_c = []
+            for nc, oc, num in casas_ref:
+                sn = nome_sig(obter_dado(oc, 'sign', ''))
+                for r in REGENTES.get(sn, []):
+                    if r in casas_p: casas_p[r].append(f"Casa {num}")
+                pos_c = float(obter_dado(oc, 'position', 0.0))
+                tab_c.append({"Casa Astrológica": nc, "Cúspide": f"{pos_c:.2f}° {fmt_sig(sn)}", "Regentes": REG_TXT.get(sn, "Desconhecido")})
 
-                planetas_dados = [("Sol", sujeito.sun, "☉"), ("Lua", sujeito.moon, "☽"), ("Mercúrio", sujeito.mercury, "☿"), ("Vênus", sujeito.venus, "♀"), ("Marte", sujeito.mars, "♂"), ("Júpiter", sujeito.jupiter, "♃"), ("Saturno", sujeito.saturn, "♄"), ("Urano", sujeito.uranus, "♅"), ("Netuno", sujeito.neptune, "♆"), ("Plutão", sujeito.pluto, "♇")]
+            planetas_dados = [("Sol", sujeito.sun, "☉"), ("Lua", sujeito.moon, "☽"), ("Mercúrio", sujeito.mercury, "☿"), ("Vênus", sujeito.venus, "♀"), ("Marte", sujeito.mars, "♂"), ("Júpiter", sujeito.jupiter, "♃"), ("Saturno", sujeito.saturn, "♄"), ("Urano", sujeito.uranus, "♅"), ("Netuno", sujeito.neptune, "♆"), ("Plutão", sujeito.pluto, "♇")]
 
-                tab_pl = []
-                mapa_casas_planetas = {}
-                planetas_mandala = []
-                contagem_elem = {"Fogo": 0, "Terra": 0, "Ar": 0, "Água": 0}
-                mapa_signo_elem = {"Áries":"Fogo","Leão":"Fogo","Sagitário":"Fogo","Touro":"Terra","Virgem":"Terra","Capricórnio":"Terra","Gêmeos":"Ar","Libra":"Ar","Aquário":"Ar","Câncer":"Água","Escorpião":"Água","Peixes":"Água"}
+            tab_pl = []
+            mapa_casas_planetas = {}
+            planetas_mandala = []
+            contagem_elem = {"Fogo": 0, "Terra": 0, "Ar": 0, "Água": 0}
+            mapa_signo_elem = {"Áries":"Fogo","Leão":"Fogo","Sagitário":"Fogo","Touro":"Terra","Virgem":"Terra","Capricórnio":"Terra","Gêmeos":"Ar","Libra":"Ar","Aquário":"Ar","Câncer":"Água","Escorpião":"Água","Peixes":"Água"}
 
-                for pn, po, sigla_glifo in planetas_dados:
-                    p_abs = float(obter_dado(po, 'abs_pos', 0.0))
-                    num_casa, por_orbe, orbe_val = calc_casa_orbe(p_abs, cuspides_abs)
-                    mapa_casas_planetas[pn] = num_casa
-                    s_nome = nome_sig(obter_dado(po, 'sign', ''))
-                    contagem_elem[mapa_signo_elem.get(s_nome, "Ar")] += 1
+            for pn, po, sigla_glifo in planetas_dados:
+                p_abs = float(obter_dado(po, 'abs_pos', 0.0))
+                num_casa, por_orbe, orbe_val = calc_casa_orbe(p_abs, cuspides_abs)
+                mapa_casas_planetas[pn] = num_casa
+                s_nome = nome_sig(obter_dado(po, 'sign', ''))
+                contagem_elem[mapa_signo_elem.get(s_nome, "Ar")] += 1
 
-                    planetas_mandala.append((pn, p_abs, sigla_glifo))
-                    rotulo_casa = f"{num_casa}ª Casa (orbe de {int(orbe_val)}°)" if por_orbe else f"{num_casa}ª Casa"
-                    pos_p = float(obter_dado(po, 'position', 0.0))
-                    tab_pl.append({
-                        "Planeta": pn,
-                        "Posição": f"{pos_p:.2f}° {fmt_sig(obter_dado(po, 'sign', ''))}",
-                        "Casa Natal (com Orbe)": rotulo_casa,
-                        "Regente": REG_TXT.get(s_nome, "Desconhecido")
-                    })
+                planetas_mandala.append((pn, p_abs, sigla_glifo))
+                rotulo_casa = f"{num_casa}ª Casa (orbe de {int(orbe_val)}°)" if por_orbe else f"{num_casa}ª Casa"
+                pos_p = float(obter_dado(po, 'position', 0.0))
+                tab_pl.append({
+                    "Planeta": pn,
+                    "Posição": f"{pos_p:.2f}° {fmt_sig(obter_dado(po, 'sign', ''))}",
+                    "Casa Natal (com Orbe)": rotulo_casa,
+                    "Regente": REG_TXT.get(s_nome, "Desconhecido")
+                })
 
-                casa_destaque = mapa_casas_planetas.get("Sol", 10)
-                potencial_info = {
-                    "titulo": f"{casa_destaque}ª Casa Zodiacal",
-                    "descricao": POTENCIAL_CASAS.get(casa_destaque, "Foco na consolidação de projetos e autoridade pessoal.")
-                }
+            casa_destaque = mapa_casas_planetas.get("Sol", 10)
+            potencial_info = {
+                "titulo": f"{casa_destaque}ª Casa Zodiacal",
+                "descricao": POTENCIAL_CASAS.get(casa_destaque, "Foco na consolidação de projetos e autoridade pessoal.")
+            }
 
-                elem_dominante = max(contagem_elem, key=contagem_elem.get)
-                swot_data = {
-                    "elemento_dominante": f"{elem_dominante} ({contagem_elem[elem_dominante]} planetas)",
-                    "forcas": [
-                        "Capacidade de liderança e centralidade pelo Sol",
-                        "Intuição estratégica e percepção refinada",
-                        "Resiliência diante de exigências estruturais",
-                        "Compromisso prático com realizações de longo prazo"
-                    ],
-                    "fraquezas": [
-                        "Cobrança interna excessiva e autocrítica severa",
-                        "Dificuldade em delegar processos críticos",
-                        "Sobrecarga mental ao absorver múltiplas frentes",
-                        "Hesitação em abrir mão de rotinas já consolidadas"
-                    ],
-                    "oportunidades": [
-                        "Ativação de prestígio e expansão profissional",
-                        "Ponteiros rápidos abrindo visibilidade e conexões",
-                        "Fase produtiva para lançamento de cursos e mentorias",
-                        "Crescimento ordenado através da aplicação técnica"
-                    ],
-                    "ameacas": [
-                        "Trânsitos de planetas lentos exigindo realismo estrito",
-                        "Atenção redobrada a minúcias contratuais e prazos",
-                        "Risco de cansaço se houver dispersão de foco",
-                        "Exigência de limites claros em parcerias e acordos"
-                    ]
-                }
+            elem_dominante = max(contagem_elem, key=contagem_elem.get)
+            swot_data = {
+                "elemento_dominante": f"{elem_dominante} ({contagem_elem[elem_dominante]} planetas)",
+                "forcas": [
+                    "Capacidade de liderança e centralidade pelo Sol",
+                    "Intuição estratégica e percepção refinada",
+                    "Resiliência diante de exigências estruturais",
+                    "Compromisso prático com realizações de longo prazo"
+                ],
+                "fraquezas": [
+                    "Cobrança interna excessiva e autocrítica severa",
+                    "Dificuldade em delegar processos críticos",
+                    "Sobrecarga mental ao absorver múltiplas frentes",
+                    "Hesitação em abrir mão de rotinas já consolidadas"
+                ],
+                "oportunidades": [
+                    "Ativação de prestígio e expansão profissional",
+                    "Ponteiros rápidos abrindo visibilidade e conexões",
+                    "Fase produtiva para lançamento de cursos e mentorias",
+                    "Crescimento ordenado através da aplicação técnica"
+                ],
+                "ameacas": [
+                    "Trânsitos de planetas lentos exigindo realismo estrito",
+                    "Atenção redobrada a minúcias contratuais e prazos",
+                    "Risco de cansaço se houver dispersão de foco",
+                    "Exigência de limites claros em parcerias e acordos"
+                ]
+            }
 
-                def reg_de(p):
-                    c = casas_p.get(p, [])
-                    return f"Regente das {', '.join(c)}" if c else "Eixo Angular"
+            def reg_de(p):
+                c = casas_p.get(p, [])
+                return f"Regente das {', '.join(c)}" if c else "Eixo Angular"
 
-                dt_nasc = datetime(int(ano), int(mes), int(dia), int(hora), int(minuto))
-                dias_v = (DATA_ANALISE - dt_nasc).days
-                asc_b = float(obter_dado(sujeito.first_house, 'abs_pos', 0.0))
+            dt_nasc = datetime(int(ano), int(mes), int(dia), int(hora), int(minuto))
+            dias_v = (DATA_ANALISE - dt_nasc).days
+            asc_b = float(obter_dado(sujeito.first_house, 'abs_pos', 0.0))
 
-                tab_pont = [{"Ponteiro": pn, "Posição Atual": fmt_g((asc_b + (dias_v / 0.25 / ft)) % 360), "Fator": f"{ft:.3f}", "Regência Ativada": reg_de(pb)} for pn, ft, pb in FATORES]
-                trans_atuais = [("Netuno","Quadratura","Urano Natal","Urano"),("Plutão","Trígono","Sol Natal","Sol"),("Saturno","Conjunção","Meio do Céu","Saturno"),("Júpiter","Sextil","Vênus Natal","Vênus")]
-                tab_ta = [{"Trânsito": t, "Aspecto": a, "Natal Alvo": n, "Regência Ativada": f"{p} {reg_de(p)}"} for t, a, n, p in trans_atuais]
+            tab_pont = [{"Ponteiro": pn, "Posição Atual": fmt_g((asc_b + (dias_v / 0.25 / ft)) % 360), "Fator": f"{ft:.3f}", "Regência Ativada": reg_de(pb)} for pn, ft, pb in FATORES]
+            trans_atuais = [("Netuno","Quadratura","Urano Natal","Urano"),("Plutão","Trígono","Sol Natal","Sol"),("Saturno","Conjunção","Meio do Céu","Saturno"),("Júpiter","Sextil","Vênus Natal","Vênus")]
+            tab_ta = [{"Trânsito": t, "Aspecto": a, "Natal Alvo": n, "Regência Ativada": f"{p} {reg_de(p)}"} for t, a, n, p in trans_atuais]
 
-                # BÚSSOLA CONSCIENTE DO DIA (CORRIGIDA)
-                frase_dia, dica_pratica = calcular_bussola_do_dia(DATA_ANALISE, tab_pont, trans_atuais)
-                st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #1f1b29 0%, #2b263b 100%);
-                            border: 1.5px solid #7df9ff; border-radius: 12px; padding: 18px; margin: 15px 0 25px 0;
-                            box-shadow: 0 4px 20px rgba(125, 249, 255, 0.18);">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                        <span style="font-size: 1.4rem;">🧭</span>
-                        <span style="color: #7df9ff; font-weight: 700; font-size: 1.15rem; letter-spacing: 0.5px;">BÚSSOLA DO DIA & DIRECIONAMENTO CONSCIENTE ({DATA_ANALISE.strftime('%d/%m/%Y')})</span>
-                    </div>
-                    <p style="color: #ffffff; font-size: 1.05rem; line-height: 1.5; font-weight: 500; margin: 0 0 10px 0;">
-                        <i>"{frase_dia}"</i>
-                    </p>
-                    <div style="background: rgba(125, 249, 255, 0.08); border-left: 3px solid #7df9ff; padding: 8px 12px; border-radius: 4px;">
-                        <p style="color: #dcd6f7; font-size: 0.92rem; margin: 0;">
-                            <b>Dica Prática para Hoje:</b> {dica_pratica}
-                        </p>
-                    </div>
+            # BÚSSOLA DO DIA NA PÁGINA WEB
+            frase_dia, dica_pratica = calcular_bussola_do_dia(DATA_ANALISE, tab_pont, trans_atuais)
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #1f1b29 0%, #2b263b 100%);
+                        border: 1.5px solid #7df9ff; border-radius: 12px; padding: 18px; margin: 15px 0 25px 0;
+                        box-shadow: 0 4px 20px rgba(125, 249, 255, 0.18);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span style="font-size: 1.4rem;">🧭</span>
+                    <span style="color: #7df9ff; font-weight: 700; font-size: 1.15rem; letter-spacing: 0.5px;">BÚSSOLA DO DIA & DIRECIONAMENTO CONSCIENTE ({DATA_ANALISE.strftime('%d/%m/%Y')})</span>
                 </div>
-                """, unsafe_allow_html=True)
+                <p style="color: #ffffff; font-size: 1.05rem; line-height: 1.5; font-weight: 500; margin: 0 0 10px 0;">
+                    <i>"{frase_dia}"</i>
+                </p>
+                <div style="background: rgba(125, 249, 255, 0.08); border-left: 3px solid #7df9ff; padding: 8px 12px; border-radius: 4px;">
+                    <p style="color: #dcd6f7; font-size: 0.92rem; margin: 0;">
+                        <b>Dica Prática para Hoje:</b> {dica_pratica}
+                    </p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("---")
+            st.markdown("### 🔵 Mandala Astrológica (Roda do Mapa Natal)")
+            svg = svg_mandala(sujeito)
+            if svg: st.components.v1.html(svg, height=650, scrolling=True)
+
+            st.markdown("---")
+            st.markdown("### 🏛️ Cúspides e Regências das Casas Natais")
+            st.table(tab_c)
+
+            st.markdown("---")
+            st.markdown("### 🪐 Posicionamentos Natais nas Casas (com Orbes de Cúspides)")
+            st.caption("ℹ️ Orbes aplicadas: 10° antes das Casas Angulares (1, 4, 7, 10) | 5° antes das Sucedentes (2, 5, 8, 11) | 3° antes das Cadentes (3, 6, 9, 12).")
+            st.table(tab_pl)
+
+            st.markdown("---")
+            st.markdown(f"### 🔭 Os 9 Ponteiros Ativos em {DATA_ANALISE.strftime('%d/%m/%Y')}")
+            st.table(tab_pont)
+
+            st.markdown("---")
+            st.markdown(f"### ⚡ Trânsitos de Planetas Lentos ({DATA_ANALISE.strftime('%d/%m/%Y')})")
+            st.table(tab_ta)
+
+            proj_pont = [(15,"Ponteiro de Mercúrio","Conjunção","Sol Natal","Sol"),(45,"Ponteiro de Vênus","Sextil","Lua Natal","Lua"),(90,"Ponteiro Solar","Quadratura","Marte Natal","Marte"),(150,"Ponteiro de Marte","Trígono","Meio do Céu","Sol"),(210,"Ponteiro de Júpiter","Oposição","Vênus Natal","Vênus"),(270,"Ponteiro de Saturno","Sextil","Ascendente","Marte"),(320,"Ponteiro de Urano","Trígono","Mercúrio Natal","Mercúrio"),(350,"Ponteiro de Netuno","Conjunção","Saturno Natal","Saturno")]
+            tab_fp = [{"Data": (DATA_ANALISE + timedelta(days=d)).strftime('%d/%m/%Y'), "Ponteiro": pt, "Aspecto": f"{asp} com {alvo}", "Regência": reg_de(p)} for d, pt, asp, alvo, p in proj_pont]
+
+            st.markdown("---")
+            st.markdown("## 🔒 Desbloqueie a Projeção de 12 Meses & Receba o seu Resumo")
+            st.info("Insira o seu WhatsApp ou E-mail e clique em **'Confirmar e Liberar'** para baixar o relatório executivo em PDF ou recebê-lo via mensagem:")
+
+            c_lead1, c_lead2 = st.columns([3, 1])
+            contato_in = c_lead1.text_input("WhatsApp (com DDD) ou E-mail:", value=st.session_state.contato_salvo, placeholder="ex: 11999998888 ou seu@email.com")
+            btn_confirmar_contato = c_lead2.button("🔓 Confirmar e Liberar", use_container_width=True)
+
+            if (btn_confirmar_contato or contato_in) and contato_in.strip():
+                st.session_state.contato_salvo = contato_in.strip()
+
+            if st.session_state.contato_salvo:
+                try:
+                    with open("leads.csv", "a", encoding="utf-8") as f:
+                        f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M')};{nome};{cidade};{st.session_state.contato_salvo}\n")
+                except Exception:
+                    pass
+
+                tab_pont_pdf = [{"Ponteiro": it["Ponteiro"], "Pos": it["Posição Atual"], "Reg": it["Regência Ativada"]} for it in tab_pont]
+
+                sol_sn = nome_sig(obter_dado(sujeito.sun, 'sign', ''))
+                lua_sn = nome_sig(obter_dado(sujeito.moon, 'sign', ''))
+                asc_sn = nome_sig(obter_dado(sujeito.first_house, 'sign', ''))
+
+                sol_pos = float(obter_dado(sujeito.sun, 'position', 0.0))
+                lua_pos = float(obter_dado(sujeito.moon, 'position', 0.0))
+                asc_pos = float(obter_dado(sujeito.first_house, 'position', 0.0))
+
+                triade_resumo = {
+                    "sol": f"{sol_pos:.2f}° {GLIFOS.get(sol_sn, '')} {sol_sn} (Casa {mapa_casas_planetas.get('Sol',1)})",
+                    "lua": f"{lua_pos:.2f}° {GLIFOS.get(lua_sn, '')} {lua_sn} (Casa {mapa_casas_planetas.get('Lua',1)})",
+                    "asc": f"{asc_pos:.2f}° {GLIFOS.get(asc_sn, '')} {asc_sn} (1ª Casa)"
+                }
+
+                pdf_bytes = fabricar_pdf_estilizado(
+                    nome_c=nome, cid_c=cidade, dt_ref=DATA_ANALISE.strftime('%d/%m/%Y'),
+                    triade_info=triade_resumo, pot_texto=potencial_info, swot_data=swot_data,
+                    tab_pont_raw=tab_pont_pdf, tab_proj_raw=tab_fp,
+                    planetas_pos=planetas_mandala, cuspides_pos=cuspides_abs, asc_grau=asc_b
+                )
+
+                st.success(f"✅ Contacto registado: **{st.session_state.contato_salvo}**! O seu relatório executivo completo foi gerado:")
+
+                msg_txt = f"Olá Douglas Rosa (@astrolodoug)!\n\n"
+                msg_txt += f"Gerei meu mapa na Astrologia Consciente:\n"
+                msg_txt += f"👤 *Consulente:* {nome} ({cidade})\n"
+                msg_txt += f"📱 *Meu Contato:* {st.session_state.contato_salvo}\n"
+                msg_txt += f"📅 *Data Base:* {DATA_ANALISE.strftime('%d/%m/%Y')}\n\n"
+                msg_txt += f"🌟 *Área de Maior Potencial:* {potencial_info['titulo']}\n\n"
+                msg_txt += "🔭 *Ponteiros Ativos em Destaque:*\n"
+                for p_it in tab_pont[:4]:
+                    msg_txt += f"• {p_it['Ponteiro']}: {p_it['Posição Atual']}\n"
+                msg_txt += "\n📅 *Próximas Ativações (12 Meses):*\n"
+                for pr_it in tab_fp[:3]:
+                    msg_txt += f"• {pr_it['Data']}: {pr_it['Ponteiro']} em {pr_it['Aspecto']}\n"
+                msg_txt += "\nGostaria de entender melhor essas ativações e agendar uma análise aprofundada!"
+
+                txt_encoded = urllib.parse.quote(msg_txt)
+                link_whats_doug = f"https://api.whatsapp.com/send?phone=5511977117024&text={txt_encoded}"
+                link_mail_doug = f"mailto:doug.douglas.santos@gmail.com?subject={urllib.parse.quote(f'Resumo Astrológico | {nome} ({cidade})')}&body={txt_encoded}"
+
+                col_btn1, col_btn2, col_btn3 = st.columns(3)
+                with col_btn1:
+                    if pdf_bytes:
+                        st.download_button(
+                            label="📥 Baixar PDF Executivo Completo",
+                            data=pdf_bytes,
+                            file_name=f"Relatorio_Astrologia_Consciente_{nome.replace(' ','_')}.pdf",
+                            mime="application/pdf",
+                            use_container_width=True
+                        )
+                with col_btn2:
+                    st.link_button("📲 Enviar para o WhatsApp de Douglas", link_whats_doug, use_container_width=True)
+                with col_btn3:
+                    st.link_button("✉️ Enviar para o E-mail de Douglas", link_mail_doug, use_container_width=True)
 
                 st.markdown("---")
-                st.markdown("### 🔵 Mandala Astrológica (Roda do Mapa Natal)")
-                svg = svg_mandala(sujeito)
-                if svg: st.components.v1.html(svg, height=650, scrolling=True)
+                st.markdown(f"### 📅 Projeção dos 9 Ponteiros (12 Meses a partir de {DATA_ANALISE.strftime('%d/%m/%Y')})")
+                st.table(tab_fp)
 
+                proj_len = [(30,"Saturno em Trânsito","Sextil","Sol Natal","Sol"),(90,"Urano em Trânsito","Trígono","Lua Natal","Lua"),(160,"Júpiter em Trânsito","Conjunção","Ascendente","Marte"),(220,"Netuno em Trânsito","Oposição","Mercúrio Natal","Mercúrio"),(300,"Plutão em Trânsito","Sextil","Meio do Céu","Sol"),(355,"Saturno em Trânsito","Trígono","Vênus Natal","Vênus")]
+                tab_fl = [{"Data": (DATA_ANALISE + timedelta(days=d)).strftime('%d/%m/%Y'), "Planeta Lento": t, "Aspecto": f"{asp} com {alvo}", "Regência": reg_de(p)} for d, t, asp, alvo, p in proj_len]
                 st.markdown("---")
-                st.markdown("### 🏛️ Cúspides e Regências das Casas Natais")
-                st.table(tab_c)
+                st.markdown(f"### 📅 Projeção de Trânsitos Lentos (12 Meses a partir de {DATA_ANALISE.strftime('%d/%m/%Y')})")
+                st.table(tab_fl)
 
-                st.markdown("---")
-                st.markdown("### 🪐 Posicionamentos Natais nas Casas (com Orbes de Cúspides)")
-                st.caption("ℹ️ Orbes aplicadas: 10° antes das Casas Angulares (1, 4, 7, 10) | 5° antes das Sucedentes (2, 5, 8, 11) | 3° antes das Cadentes (3, 6, 9, 12).")
-                st.table(tab_pl)
-
-                st.markdown("---")
-                st.markdown(f"### 🔭 Os 9 Ponteiros Ativos em {DATA_ANALISE.strftime('%d/%m/%Y')}")
-                st.table(tab_pont)
-
-                st.markdown("---")
-                st.markdown(f"### ⚡ Trânsitos de Planetas Lentos ({DATA_ANALISE.strftime('%d/%m/%Y')})")
-                st.table(tab_ta)
-
-                proj_pont = [(15,"Ponteiro de Mercúrio","Conjunção","Sol Natal","Sol"),(45,"Ponteiro de Vênus","Sextil","Lua Natal","Lua"),(90,"Ponteiro Solar","Quadratura","Marte Natal","Marte"),(150,"Ponteiro de Marte","Trígono","Meio do Céu","Sol"),(210,"Ponteiro de Júpiter","Oposição","Vênus Natal","Vênus"),(270,"Ponteiro de Saturno","Sextil","Ascendente","Marte"),(320,"Ponteiro de Urano","Trígono","Mercúrio Natal","Mercúrio"),(350,"Ponteiro de Netuno","Conjunção","Saturno Natal","Saturno")]
-                tab_fp = [{"Data": (DATA_ANALISE + timedelta(days=d)).strftime('%d/%m/%Y'), "Ponteiro": pt, "Aspecto": f"{asp} com {alvo}", "Regência": reg_de(p)} for d, pt, asp, alvo, p in proj_pont]
-
-                st.markdown("---")
-                st.markdown("## 🔒 Desbloqueie a Projeção de 12 Meses & Receba o seu Resumo")
-                st.info("Insira o seu WhatsApp ou E-mail e clique em **'Confirmar e Liberar'** para baixar o relatório executivo em PDF ou recebê-lo via mensagem:")
-
-                c_lead1, c_lead2 = st.columns([3, 1])
-                contato_in = c_lead1.text_input("WhatsApp (com DDD) ou E-mail:", value=st.session_state.contato_salvo, placeholder="ex: 11999998888 ou seu@email.com")
-                btn_confirmar_contato = c_lead2.button("🔓 Confirmar e Liberar", use_container_width=True)
-
-                if (btn_confirmar_contato or contato_in) and contato_in.strip():
-                    st.session_state.contato_salvo = contato_in.strip()
-
-                if st.session_state.contato_salvo:
-                    try:
-                        with open("leads.csv", "a", encoding="utf-8") as f:
-                            f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M')};{nome};{cidade};{st.session_state.contato_salvo}\n")
-                    except Exception:
-                        pass
-
-                    tab_pont_pdf = [{"Ponteiro": it["Ponteiro"], "Pos": it["Posição Atual"], "Reg": it["Regência Ativada"]} for it in tab_pont]
-
-                    sol_sn = nome_sig(obter_dado(sujeito.sun, 'sign', ''))
-                    lua_sn = nome_sig(obter_dado(sujeito.moon, 'sign', ''))
-                    asc_sn = nome_sig(obter_dado(sujeito.first_house, 'sign', ''))
-
-                    sol_pos = float(obter_dado(sujeito.sun, 'position', 0.0))
-                    lua_pos = float(obter_dado(sujeito.moon, 'position', 0.0))
-                    asc_pos = float(obter_dado(sujeito.first_house, 'position', 0.0))
-
-                    triade_resumo = {
-                        "sol": f"{sol_pos:.2f}° {GLIFOS.get(sol_sn, '')} {sol_sn} (Casa {mapa_casas_planetas.get('Sol',1)})",
-                        "lua": f"{lua_pos:.2f}° {GLIFOS.get(lua_sn, '')} {lua_sn} (Casa {mapa_casas_planetas.get('Lua',1)})",
-                        "asc": f"{asc_pos:.2f}° {GLIFOS.get(asc_sn, '')} {asc_sn} (1ª Casa)"
-                    }
-
-                    pdf_bytes = fabricar_pdf_estilizado(
-                        nome_c=nome, cid_c=cidade, dt_ref=DATA_ANALISE.strftime('%d/%m/%Y'),
-                        triade_info=triade_resumo, pot_texto=potencial_info, swot_data=swot_data,
-                        tab_pont_raw=tab_pont_pdf, tab_proj_raw=tab_fp,
-                        planetas_pos=planetas_mandala, cuspides_pos=cuspides_abs, asc_grau=asc_b
-                    )
-
-                    st.success(f"✅ Contacto registado: **{st.session_state.contato_salvo}**! O seu relatório executivo completo foi gerado:")
-
-                    msg_txt = f"Olá Douglas Rosa (@astrolodoug)!\n\n"
-                    msg_txt += f"Gerei meu mapa na Astrologia Consciente:\n"
-                    msg_txt += f"👤 *Consulente:* {nome} ({cidade})\n"
-                    msg_txt += f"📱 *Meu Contato:* {st.session_state.contato_salvo}\n"
-                    msg_txt += f"📅 *Data Base:* {DATA_ANALISE.strftime('%d/%m/%Y')}\n\n"
-                    msg_txt += f"🌟 *Área de Maior Potencial:* {potencial_info['titulo']}\n\n"
-                    msg_txt += "🔭 *Ponteiros Ativos em Destaque:*\n"
-                    for p_it in tab_pont[:4]:
-                        msg_txt += f"• {p_it['Ponteiro']}: {p_it['Posição Atual']}\n"
-                    msg_txt += "\n📅 *Próximas Ativações (12 Meses):*\n"
-                    for pr_it in tab_fp[:3]:
-                        msg_txt += f"• {pr_it['Data']}: {pr_it['Ponteiro']} em {pr_it['Aspecto']}\n"
-                    msg_txt += "\nGostaria de entender melhor essas ativações e agendar uma análise aprofundada!"
-
-                    txt_encoded = urllib.parse.quote(msg_txt)
-                    link_whats_doug = f"https://api.whatsapp.com/send?phone=5511977117024&text={txt_encoded}"
-                    link_mail_doug = f"mailto:doug.douglas.santos@gmail.com?subject={urllib.parse.quote(f'Resumo Astrológico | {nome} ({cidade})')}&body={txt_encoded}"
-
-                    col_btn1, col_btn2, col_btn3 = st.columns(3)
-                    with col_btn1:
-                        if pdf_bytes:
-                            st.download_button(
-                                label="📥 Baixar PDF Executivo Completo",
-                                data=pdf_bytes,
-                                file_name=f"Relatorio_Astrologia_Consciente_{nome.replace(' ','_')}.pdf",
-                                mime="application/pdf",
-                                use_container_width=True
-                            )
-                    with col_btn2:
-                        st.link_button("📲 Enviar para o WhatsApp de Douglas", link_whats_doug, use_container_width=True)
-                    with col_btn3:
-                        st.link_button("✉️ Enviar para o E-mail de Douglas", link_mail_doug, use_container_width=True)
-
-                    st.markdown("---")
-                    st.markdown(f"### 📅 Projeção dos 9 Ponteiros (12 Meses a partir de {DATA_ANALISE.strftime('%d/%m/%Y')})")
-                    st.table(tab_fp)
-
-                    proj_len = [(30,"Saturno em Trânsito","Sextil","Sol Natal","Sol"),(90,"Urano em Trânsito","Trígono","Lua Natal","Lua"),(160,"Júpiter em Trânsito","Conjunção","Ascendente","Marte"),(220,"Netuno em Trânsito","Oposição","Mercúrio Natal","Mercúrio"),(300,"Plutão em Trânsito","Sextil","Meio do Céu","Sol"),(355,"Saturno em Trânsito","Trígono","Vênus Natal","Vênus")]
-                    tab_fl = [{"Data": (DATA_ANALISE + timedelta(days=d)).strftime('%d/%m/%Y'), "Planeta Lento": t, "Aspecto": f"{asp} com {alvo}", "Regência": reg_de(p)} for d, t, asp, alvo, p in proj_len]
-                    st.markdown("---")
-                    st.markdown(f"### 📅 Projeção de Trânsitos Lentos (12 Meses a partir de {DATA_ANALISE.strftime('%d/%m/%Y')})")
-                    st.table(tab_fl)
-
-                    st.markdown("## 🧠 Síntese Interpretativa e Direcionamento Consciente")
-                    ce, cd = st.columns(2)
-                    with ce:
-                        st.markdown("### ⚠️ Setores de Tensão Construtiva")
-                        st.warning("Carreira (Casa 10): Saturno exige disciplina e método.")
-                        st.warning("Emocional (Casas de Água): Netuno pede discernimento e limites.")
-                        st.info("Orientação: Encare a tensão como filtro de maturidade.")
-                    with cd:
-                        st.markdown("### ✨ Setores de Fluxo Positivo")
-                        st.success("Oportunidades: Plutão e Júpiter trazem reconhecimento público.")
-                        st.success("Ensino e Expansão: Sol e Vênus favorecem alianças sólidas.")
-                        st.info("Orientação: Momento ideal para difundir a Astrologia Consciente.")
-                else:
-                    st.warning("👆 Digite o seu WhatsApp ou E-mail e toque no botão **'🔓 Confirmar e Liberar'** para gerar os botões de envio e o PDF.")
+                st.markdown("## 🧠 Síntese Interpretativa e Direcionamento Consciente")
+                ce, cd = st.columns(2)
+                with ce:
+                    st.markdown("### ⚠️ Setores de Tensão Construtiva")
+                    st.warning("Carreira (Casa 10): Saturno exige disciplina e método.")
+                    st.warning("Emocional (Casas de Água): Netuno pede discernimento e limites.")
+                    st.info("Orientação: Encare a tensão como filtro de maturidade.")
+                with cd:
+                    st.markdown("### ✨ Setores de Fluxo Positivo")
+                    st.success("Oportunidades: Plutão e Júpiter trazem reconhecimento público.")
+                    st.success("Ensino e Expansão: Sol e Vênus favorecem alianças sólidas.")
+                    st.info("Orientação: Momento ideal para difundir a Astrologia Consciente.")
+            else:
+                st.warning("👆 Digite o seu WhatsApp ou E-mail e toque no botão **'🔓 Confirmar e Liberar'** para gerar os botões de envio e o PDF.")
 
         except Exception as e:
             st.error(f"Erro ao processar: {e}")
