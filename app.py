@@ -113,7 +113,6 @@ ESTADOS_BR = [
     "DF - Distrito Federal", "MS - Mato Grosso do Sul", "SE - Sergipe", "RO - Rondônia", "TO - Tocantins"
 ]
 
-# COORDENADAS E FUSOS DAS CAPITAIS PARA CONTINGÊNCIA INSTANTÂNEA
 COODS_CAPITAIS = {
     "SP": (-23.5505, -46.6333, "America/Sao_Paulo"),
     "RJ": (-22.9068, -43.1729, "America/Sao_Paulo"),
@@ -178,7 +177,6 @@ def carregar_municipios(sigla_uf):
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def obter_geolocalizacao_segura(cidade_str, sigla_uf=""):
-    # 1. Se for uma das capitais conhecidas, obtém imediatamente da memória sem fazer requisição de rede
     nome_puro = cidade_str.split(",")[0].strip().lower()
     capitais_nomes = {
         "são paulo": "SP", "sao paulo": "SP", "rio de janeiro": "RJ", "belo horizonte": "MG",
@@ -196,7 +194,6 @@ def obter_geolocalizacao_segura(cidade_str, sigla_uf=""):
             lat, lng, tz = COODS_CAPITAIS[uf_ref]
             return float(lat), float(lng), tz
 
-    # 2. Consulta o serviço com limite de espera seguro de 12 segundos
     try:
         geo = Nominatim(user_agent="astrologia_consciente_douglas_v2", timeout=12)
         loc = geo.geocode(cidade_str)
@@ -207,7 +204,6 @@ def obter_geolocalizacao_segura(cidade_str, sigla_uf=""):
     except Exception:
         pass
 
-    # 3. Contingência garantida com base no estado selecionado
     if sigla_uf in COODS_CAPITAIS:
         lat, lng, tz = COODS_CAPITAIS[sigla_uf]
         return float(lat), float(lng), tz
@@ -363,14 +359,12 @@ def gerar_mandala_astrologica_png(planetas_pos, cuspides_pos, asc_grau):
     font_path = fm.findfont('DejaVu Sans')
     font_prop = fm.FontProperties(fname=font_path) if font_path else None
 
-    # Anel Zodiacal com Cores dos 4 Elementos
     for i, (nome, glifo, cor) in enumerate(signos_dados):
         mid_deg = i * 30 + 15
         mid_rad = np.radians(mid_deg) + offset_rad
         ax.bar(mid_rad, 0.28, width=np.radians(30), bottom=1.12, color=cor, alpha=0.45, edgecolor='#102a43', linewidth=1)
         ax.text(mid_rad, 1.25, glifo, ha='center', va='center', fontsize=14, color='#102a43', fontproperties=font_prop)
 
-    # 12 Casas Astrológicas
     for h in range(1, 13):
         c_deg = cuspides_pos.get(h, (h - 1) * 30)
         c_rad = np.radians(c_deg) + offset_rad
@@ -385,14 +379,12 @@ def gerar_mandala_astrologica_png(planetas_pos, cuspides_pos, asc_grau):
         mid_h_rad = np.radians(mid_h) + offset_rad
         ax.text(mid_h_rad, 0.55, str(h), ha='center', va='center', fontsize=8, color='#0d47a1', fontweight='bold')
 
-    # Círculos Estruturais
     theta_circ = np.linspace(0, 2 * np.pi, 200)
     ax.plot(theta_circ, [0.45] * 200, color='#0d47a1', linewidth=1.5)
     ax.plot(theta_circ, [1.12] * 200, color='#102a43', linewidth=1.5)
     ax.plot(theta_circ, [1.40] * 200, color='#102a43', linewidth=1.5)
     ax.text(0, 0, "MAPA\nNATAL", ha='center', va='center', fontsize=8.5, fontweight='bold', color='#102a43')
 
-    # Aspetos Astrológicos no Centro
     for i, (p1, g1, _) in enumerate(planetas_pos):
         for j, (p2, g2, _) in enumerate(planetas_pos):
             if i >= j: continue
@@ -410,7 +402,6 @@ def gerar_mandala_astrologica_png(planetas_pos, cuspides_pos, asc_grau):
             if cor_asp:
                 ax.plot([r1, r2], [0.44, 0.44], color=cor_asp, linewidth=lw_asp, alpha=0.7, zorder=2)
 
-    # Posicionamento dos Planetas com Glifos e Graus
     for p_nome, p_grau, p_glifo in planetas_pos:
         p_rad = np.radians(p_grau) + offset_rad
         ax.plot(p_rad, 0.85, 'o', color='#0d47a1', markersize=5, zorder=4)
@@ -473,7 +464,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setLineWidth(1)
     c.line(40, h_page - 156, w_page - 40, h_page - 156)
 
-    # Box Esquerda: Tríade com Glifos
     c.setFillColor(cor_fundo_card)
     c.setStrokeColor(cor_borda)
     c.roundRect(40, h_page - 370, 275, 205, 5, fill=1, stroke=1)
@@ -507,7 +497,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         c.drawString(50, y_pt, seguro_texto(lp))
         y_pt -= 12
 
-    # Box Direita com Mandala Completa Idêntica ao Site
     c.setFillColor(HexColor('#ffffff'))
     c.setStrokeColor(cor_borda)
     c.roundRect(330, h_page - 370, 225, 205, 5, fill=1, stroke=1)
@@ -520,7 +509,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         c.setFont(FONTE_BOLD_NOME, 8.5)
         c.drawCentredString(442.5, h_page - 270, seguro_texto("Mandala Astrológica Natal"))
 
-    # Seção 2: SWOT Natal
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 390, seguro_texto("2. Análise Comportamental: Forças e Fraquezas Natais"))
@@ -564,7 +552,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
             c.drawString(65 + w_box, y_fr, seguro_texto(linhas_fr[1]))
         y_fr -= 14
 
-    # Seção 3: Ponteiros com Glifos
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 542, seguro_texto("3. Posicionamento Atual dos 9 Ponteiros"))
@@ -597,7 +584,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFont(FONTE_BOLD_NOME, 10.5)
     c.drawString(40, h_page - 32, seguro_texto("CRONOGRAMA PREDITIVO: OPORTUNIDADES, AMEAÇAS E DIRECIONAMENTO"))
 
-    # Seção 4: SWOT Preditivo
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 75, seguro_texto("4. Matriz Preditiva: Oportunidades & Ameaças dos Próximos 12 Meses"))
@@ -640,7 +626,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
             c.drawString(65 + w_box, y_am, seguro_texto(linhas_am[1]))
         y_am -= 14
 
-    # Seção 5: Cronograma
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 238, seguro_texto("5. Cronograma dos 9 Ponteiros & Gatilhos no Tempo (12 Meses)"))
@@ -655,7 +640,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         c.drawString(55, y_pr, seguro_texto(f"{p['Data']}: {p['Ponteiro']} em {p['Aspecto']} ({p['Regência']})"))
         y_pr -= 15
 
-    # Seção 6: Dedicatória
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, y_pr - 10, seguro_texto("6. Guia Didático & Dedicatória Oficial"))
@@ -706,7 +690,10 @@ st.title("✨ Astrologia Consciente")
 st.markdown("### A Dança dos Ponteiros: Relatório Preditivo e Mandala")
 
 st.sidebar.header("⚙️ Painel de Dados do Consulente")
-nome = st.sidebar.text_input("Nome Completo", "Douglas Rosa")
+
+# CAMPO DE NOME LIMPO COM PLACEHOLDER "Inserir nome"
+nome_input = st.sidebar.text_input("Nome Completo", value="", placeholder="Inserir nome")
+nome = nome_input.strip() if nome_input.strip() else "Consulente"
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("📍 Local de Nascimento")
@@ -755,7 +742,6 @@ st.sidebar.link_button("▶️ Acessar Canal no YouTube", "https://youtube.com/@
 if st.session_state.mapa_gerado:
     with st.spinner("A processar cálculos astrológicos..."):
         try:
-            # GEOLOCALIZAÇÃO ROBUSTA COM CONTINGÊNCIA INSTANTÂNEA
             lat, lng, tz_str = obter_geolocalizacao_segura(cidade, sigla_uf)
 
             sujeito = AstrologicalSubjectFactory.from_birth_data(name=nome, year=int(ano), month=int(mes), day=int(dia), hour=int(hora), minute=int(minuto), lat=float(lat), lng=float(lng), tz_str=tz_str)
@@ -845,7 +831,7 @@ if st.session_state.mapa_gerado:
             trans_atuais = [("Netuno","Quadratura","Urano Natal","Urano"),("Plutão","Trígono","Sol Natal","Sol"),("Saturno","Conjunção","Meio do Céu","Saturno"),("Júpiter","Sextil","Vênus Natal","Vênus")]
             tab_ta = [{"Trânsito": t, "Aspecto": a, "Natal Alvo": n, "Regência Ativada": f"{p} {reg_de(p)}"} for t, a, n, p in trans_atuais]
 
-            # BÚSSOLA DO DIA NA PÁGINA WEB
+            # BÚSSOLA CONSCIENTE DO DIA
             frase_dia, dica_pratica = calcular_bussola_do_dia(DATA_ANALISE, tab_pont, trans_atuais)
             st.markdown(f"""
             <div style="background: linear-gradient(135deg, #1f1b29 0%, #2b263b 100%);
