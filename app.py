@@ -29,10 +29,33 @@ if "contato_salvo" not in st.session_state:
 
 st.markdown("""
 <style>
+/* Fundo Geral e Cabeçalho Nativo */
 .stApp { background: #2b263b; color: #f0f0f0; }
+header[data-testid="stHeader"] {
+    background-color: #1f1b29 !important;
+    border-bottom: 1px solid rgba(125, 249, 255, 0.2) !important;
+}
+
+/* Botão da Seta para Abrir os Dados no Telemóvel */
+[data-testid="stSidebarCollapsedControl"] {
+    background-color: #1f1b29 !important;
+    border: 1.5px solid #7df9ff !important;
+    border-radius: 8px !important;
+    padding: 3px 8px !important;
+    box-shadow: 0 0 12px rgba(125, 249, 255, 0.35) !important;
+}
+[data-testid="stSidebarCollapsedControl"]:hover {
+    background-color: #2b263b !important;
+}
+[data-testid="stSidebarCollapsedControl"] svg {
+    fill: #7df9ff !important;
+    stroke: #7df9ff !important;
+}
+
 [data-testid="stSidebar"] { background: #1f1b29; color: #f0f0f0; }
 h1, h2, h3 { color: #7df9ff !important; }
 p, label, span { color: #dcd6f7 !important; }
+
 .stButton > button {
     background: linear-gradient(135deg, #7df9ff 0%, #48cae4 100%) !important;
     border: 1px solid #7df9ff !important;
@@ -210,6 +233,51 @@ def desenhar_marcador(c, x, y, cor=HexColor('#0d47a1'), raio=2.5):
     p.close()
     c.drawPath(p, fill=1, stroke=0)
 
+# ==================== GERADOR DA DICA DO DIA ====================
+def calcular_bussola_do_dia(dt_analise, tab_pont, trans_atuais):
+    p_focal = tab_pont[0]['Ponteiro'] if tab_pont else "Ponteiro Solar"
+    t_focal = trans_atuais[0]['Trânsito'] if trans_atuais else "Saturno"
+
+    banco_dicas = {
+        "Ponteiro Solar": (
+            "Hoje o tempo exige centralidade, consciência autoral e clareza no propósito. Assuma o leme das suas escolhas sem esperar aprovação externa.",
+            "Defina uma prioridade inegociável para hoje e conclua-a antes de iniciar novas tarefas."
+        ),
+        "Ponteiro de Mercúrio": (
+            "Dia de alta mobilidade intelectual, trocas estratégicas e precisão na fala. O método lógico supera qualquer ruído comunicativo.",
+            "Revise contratos, organize documentos e responda a pendências importantes com objetividade."
+        ),
+        "Ponteiro de Vênus": (
+            "O compasso favorece a diplomacia consciente, o valor pessoal e o refinamento de parcerias sólidas.",
+            "Avalie o valor real do seu tempo e estabeleça acordos em que o reconhecimento recíproco seja nítido."
+        ),
+        "Ponteiro de Marte": (
+            "Energia propícia para romper inércias e tomar decisões pragmáticas. Conduza o impulso com estratégia, evitando confrontos estéreis.",
+            "Canalize a força de ação para finalizar uma tarefa que vinha a ser adiada."
+        ),
+        "Ponteiro de Júpiter": (
+            "Momento de abertura de visão e expansão estratégica. Confie no plano a longo prazo e amplie os seus horizontes de atuação.",
+            "Dedique tempo ao estudo, ao planeamento de novos passos profissionais ou ao contato com mentores."
+        ),
+        "Ponteiro de Saturno": (
+            "O dia convida à sobriedade, rigor técnico e maturidade. A lentidão consciente hoje poupa retrabalho amanhã.",
+            "Filtre excessos, corte distrações e concentre-se na consolidação de estruturas sólidas."
+        ),
+        "Ponteiro de Urano": (
+            "Dia dinâmico que premia a inventividade e a capacidade de adaptação rápida. Quebre protocolos obsoletos com discernimento.",
+            "Adote uma abordagem inovadora para resolver um problema antigo da sua rotina."
+        ),
+        "Ponteiro de Netuno": (
+            "Sensibilidade e perceção intuitiva apuradas. Mantenha os pés no chão e filtre promessas vagas com critérios práticos.",
+            "Proteja a sua energia emocional e ancore intuições em dados e planeamento factual."
+        ),
+        "Ponteiro de Plutão": (
+            "Profundidade analítica e poder de regeneração. Reconheça o que já cumpriu o seu ciclo para libertar espaço ao crescimento.",
+            "Desapegue de hábitos desgastados e tome uma atitude corajosa de transformação pessoal."
+        )
+    }
+    return banco_dicas.get(p_focal, banco_dicas["Ponteiro Solar"])
+
 # ==================== MANDALA ASTROLÓGICA OFICIAL DO SITE ====================
 def gerar_mandala_astrologica_png(planetas_pos, cuspides_pos, asc_grau):
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(projection='polar'))
@@ -256,7 +324,7 @@ def gerar_mandala_astrologica_png(planetas_pos, cuspides_pos, asc_grau):
     ax.plot(theta_circ, [1.40] * 200, color='#102a43', linewidth=1.5)
     ax.text(0, 0, "MAPA\nNATAL", ha='center', va='center', fontsize=8.5, fontweight='bold', color='#102a43')
 
-    # Aspetos Astrológicos no Centro (Trígonos, Sextis, Quadraturas, Oposições)
+    # Aspetos Astrológicos no Centro
     for i, (p1, g1, _) in enumerate(planetas_pos):
         for j, (p2, g2, _) in enumerate(planetas_pos):
             if i >= j: continue
@@ -266,15 +334,10 @@ def gerar_mandala_astrologica_png(planetas_pos, cuspides_pos, asc_grau):
             r2 = np.radians(g2) + offset_rad
 
             cor_asp, lw_asp = None, 0.8
-            if abs(diff - 120) <= 6:
-                cor_asp = '#2a9d8f'
-            elif abs(diff - 60) <= 5:
-                cor_asp = '#457b9d'
-            elif abs(diff - 90) <= 6:
-                cor_asp = '#e63946'
-            elif abs(diff - 180) <= 7:
-                cor_asp = '#d62828'
-                lw_asp = 1.3
+            if abs(diff - 120) <= 6: cor_asp = '#2a9d8f'
+            elif abs(diff - 60) <= 5: cor_asp = '#457b9d'
+            elif abs(diff - 90) <= 6: cor_asp = '#e63946'
+            elif abs(diff - 180) <= 7: cor_asp, lw_asp = '#d62828', 1.3
 
             if cor_asp:
                 ax.plot([r1, r2], [0.44, 0.44], color=cor_asp, linewidth=lw_asp, alpha=0.7, zorder=2)
@@ -312,7 +375,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     cor_fundo_card = HexColor('#f7f9fc')
     cor_borda = HexColor('#c5d0e6')
 
-    # ========================== PÁGINA 1 ==========================
+    # PÁGINA 1
     c.setFillColor(cor_topo)
     c.rect(0, h_page - 80, w_page, 80, fill=1, stroke=0)
     c.setFillColor(cor_azul_escuro)
@@ -326,7 +389,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFont(FONTE_UNICODE_NOME, 8)
     c.drawString(40, h_page - 66, seguro_texto("Pesquisa e Metodologia: Douglas Rosa (@astrolodoug)"))
 
-    # Card Consulente
     c.setFillColor(cor_fundo_card)
     c.setStrokeColor(cor_borda)
     c.roundRect(40, h_page - 135, w_page - 80, 45, 5, fill=1, stroke=1)
@@ -336,7 +398,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFont(FONTE_UNICODE_NOME, 8.5)
     c.drawString(50, h_page - 120, seguro_texto(f"Data Base da Análise: {dt_ref} | Método: APRS e Trânsitos Ativos"))
 
-    # Seção 1: Síntese e Mandala
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 152, seguro_texto("1. Síntese da Personalidade & Mandala Astrológica"))
@@ -344,7 +405,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setLineWidth(1)
     c.line(40, h_page - 156, w_page - 40, h_page - 156)
 
-    # Box Esquerda: Tríade com Glifos
     c.setFillColor(cor_fundo_card)
     c.setStrokeColor(cor_borda)
     c.roundRect(40, h_page - 370, 275, 205, 5, fill=1, stroke=1)
@@ -378,7 +438,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         c.drawString(50, y_pt, seguro_texto(lp))
         y_pt -= 12
 
-    # Box Direita com Mandala Completa Idêntica ao Site
     c.setFillColor(HexColor('#ffffff'))
     c.setStrokeColor(cor_borda)
     c.roundRect(330, h_page - 370, 225, 205, 5, fill=1, stroke=1)
@@ -391,7 +450,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         c.setFont(FONTE_BOLD_NOME, 8.5)
         c.drawCentredString(442.5, h_page - 270, seguro_texto("Mandala Astrológica Natal"))
 
-    # Seção 2: SWOT Natal
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 390, seguro_texto("2. Análise Comportamental: Forças e Fraquezas Natais"))
@@ -435,7 +493,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
             c.drawString(65 + w_box, y_fr, seguro_texto(linhas_fr[1]))
         y_fr -= 14
 
-    # Seção 3: Ponteiros com Glifos
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 542, seguro_texto("3. Posicionamento Atual dos 9 Ponteiros"))
@@ -468,7 +525,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFont(FONTE_BOLD_NOME, 10.5)
     c.drawString(40, h_page - 32, seguro_texto("CRONOGRAMA PREDITIVO: OPORTUNIDADES, AMEAÇAS E DIRECIONAMENTO"))
 
-    # Seção 4: SWOT Preditivo
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 75, seguro_texto("4. Matriz Preditiva: Oportunidades & Ameaças dos Próximos 12 Meses"))
@@ -511,7 +567,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
             c.drawString(65 + w_box, y_am, seguro_texto(linhas_am[1]))
         y_am -= 14
 
-    # Seção 5: Cronograma
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 238, seguro_texto("5. Cronograma dos 9 Ponteiros & Gatilhos no Tempo (12 Meses)"))
@@ -526,7 +581,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         c.drawString(55, y_pr, seguro_texto(f"{p['Data']}: {p['Ponteiro']} em {p['Aspecto']} ({p['Regência']})"))
         y_pr -= 15
 
-    # Seção 6: Dedicatória
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, y_pr - 10, seguro_texto("6. Guia Didático & Dedicatória Oficial"))
@@ -541,7 +595,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFont(FONTE_BOLD_NOME, 9.5)
     c.drawString(55, y_card + 102, seguro_texto("Uma mensagem de Douglas Rosa (@astrolodoug) para você:"))
     c.setFillColor(HexColor('#ffffff'))
-    c.setFont(FONTE_UNICODE_NOME, 8)
+    c.setFont(FONTE_OBLIQUE, 8)
     c.drawString(55, y_card + 85, seguro_texto('"O mapa astral não é uma sentença estática: é uma partitura rítmica viva.'))
     c.drawString(55, y_card + 72, seguro_texto('A Dança dos Ponteiros (APRS) revela o momento exato em que cada tema'))
     c.drawString(55, y_card + 59, seguro_texto('é convocado a amadurecer ou expandir. Use essas datas como coordenadas de ação."'))
@@ -564,10 +618,20 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     buf.seek(0)
     return buf.getvalue()
 
+# ==================== INTERFACE WEB STREAMLIT ====================
+# Indicador visual no topo para abertura dos dados
+st.markdown("""
+<div style="background: rgba(31, 27, 41, 0.95); border: 1.5px solid #7df9ff; border-radius: 10px; padding: 10px 16px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between;">
+    <span style="color: #7df9ff; font-weight: 700; font-size: 0.98rem;">
+        👉 <b>Acesso aos Dados de Nascimento:</b> Toque na seta no canto superior esquerdo (<b>&gt;</b>) para abrir o painel lateral e inserir os seus dados.
+    </span>
+</div>
+""", unsafe_allow_html=True)
+
 st.title("✨ Astrologia Consciente")
 st.markdown("### A Dança dos Ponteiros: Relatório Preditivo e Mandala")
 
-st.sidebar.header("Dados do Consulente")
+st.sidebar.header("⚙️ Painel de Dados do Consulente")
 nome = st.sidebar.text_input("Nome Completo", "Douglas Rosa")
 
 st.sidebar.markdown("---")
@@ -628,11 +692,6 @@ if st.session_state.mapa_gerado:
                 sujeito = AstrologicalSubjectFactory.from_birth_data(name=nome, year=int(ano), month=int(mes), day=int(dia), hour=int(hora), minute=int(minuto), lat=float(lat), lng=float(lng), tz_str=tz_str)
                 st.success(f"Mapa gerado: {nome} ({cidade}) | Data base: {DATA_ANALISE.strftime('%d/%m/%Y')}")
 
-                st.markdown("---")
-                st.markdown("### 🔵 Mandala Astrológica (Roda do Mapa Natal)")
-                svg = svg_mandala(sujeito)
-                if svg: st.components.v1.html(svg, height=650, scrolling=True)
-
                 casas_ref = [("1ª Casa (Ascendente)", sujeito.first_house, 1), ("2ª Casa", sujeito.second_house, 2), ("3ª Casa", sujeito.third_house, 3), ("4ª Casa (Fundo do Céu)", sujeito.fourth_house, 4), ("5ª Casa", sujeito.fifth_house, 5), ("6ª Casa", sujeito.sixth_house, 6), ("7ª Casa (Descendente)", sujeito.seventh_house, 7), ("8ª Casa", sujeito.eighth_house, 8), ("9ª Casa", sujeito.ninth_house, 9), ("10ª Casa (Meio do Céu)", sujeito.tenth_house, 10), ("11ª Casa", sujeito.eleventh_house, 11), ("12ª Casa", sujeito.twelfth_house, 12)]
                 cuspides_abs = {num: float(obter_dado(oc, 'abs_pos', 0.0)) for _, oc, num in casas_ref}
                 casas_p = {p: [] for p in ["Sol","Lua","Mercúrio","Vênus","Marte","Júpiter","Saturno","Urano","Netuno","Plutão"]}
@@ -644,10 +703,6 @@ if st.session_state.mapa_gerado:
                         if r in casas_p: casas_p[r].append(f"Casa {num}")
                     pos_c = float(obter_dado(oc, 'position', 0.0))
                     tab_c.append({"Casa Astrológica": nc, "Cúspide": f"{pos_c:.2f}° {fmt_sig(sn)}", "Regentes": REG_TXT.get(sn, "Desconhecido")})
-
-                st.markdown("---")
-                st.markdown("### 🏛️ Cúspides e Regências das Casas Natais")
-                st.table(tab_c)
 
                 planetas_dados = [("Sol", sujeito.sun, "☉"), ("Lua", sujeito.moon, "☽"), ("Mercúrio", sujeito.mercury, "☿"), ("Vênus", sujeito.venus, "♀"), ("Marte", sujeito.mars, "♂"), ("Júpiter", sujeito.jupiter, "♃"), ("Saturno", sujeito.saturn, "♄"), ("Urano", sujeito.uranus, "♅"), ("Netuno", sujeito.neptune, "♆"), ("Plutão", sujeito.pluto, "♇")]
 
@@ -673,11 +728,6 @@ if st.session_state.mapa_gerado:
                         "Casa Natal (com Orbe)": rotulo_casa,
                         "Regente": REG_TXT.get(s_nome, "Desconhecido")
                     })
-
-                st.markdown("---")
-                st.markdown("### 🪐 Posicionamentos Natais nas Casas (com Orbes de Cúspides)")
-                st.caption("ℹ️ Orbes aplicadas: 10° antes das Casas Angulares (1, 4, 7, 10) | 5° antes das Sucedentes (2, 5, 8, 11) | 3° antes das Cadentes (3, 6, 9, 12).")
-                st.table(tab_pl)
 
                 casa_destaque = mapa_casas_planetas.get("Sol", 10)
                 potencial_info = {
@@ -723,12 +773,48 @@ if st.session_state.mapa_gerado:
                 asc_b = float(obter_dado(sujeito.first_house, 'abs_pos', 0.0))
 
                 tab_pont = [{"Ponteiro": pn, "Posição Atual": fmt_g((asc_b + (dias_v / 0.25 / ft)) % 360), "Fator": f"{ft:.3f}", "Regência Ativada": reg_de(pb)} for pn, ft, pb in FATORES]
+                trans_atuais = [("Netuno","Quadratura","Urano Natal","Urano"),("Plutão","Trígono","Sol Natal","Sol"),("Saturno","Conjunção","Meio do Céu","Saturno"),("Júpiter","Sextil","Vênus Natal","Vênus")]
+                tab_ta = [{"Trânsito": t, "Aspecto": a, "Natal Alvo": n, "Regência Ativada": f"{p} {reg_de(p)}"} for t, a, n, p in trans_atuais]
+
+                # ==================== BÚSSOLA CONSCIENTE DO DIA NA WEB ====================
+                frase_dia, dica_pratica = calcular_bussola_do_dia(DATA_ANALISE, tab_pont, trans_atuais)
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #1f1b29 0%, #2b263b 100%);
+                            border: 1.5px solid #7df9ff; border-radius: 12px; padding: 18px; margin: 15px 0 25px 0;
+                            box-shadow: 0 4px 20px rgba(125, 249, 255, 0.18);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <span style="font-size: 1.4rem;">🧭</span>
+                        <span style="color: #7df9ff; font-weight: 700; font-size: 1.15rem; letter-spacing: 0.5px;">BÚSSOLA DO DIA & DIRECIONAMENTO CONSCIENTE ({DATA_ANALISE.strftime('%d/%m/%Y')})</span>
+                    </div>
+                    <p style="color: #ffffff; font-size: 1.05rem; line-height: 1.5; font-weight: 500; margin: 0 0 10px 0;">
+                        <i>"{frase_dia}"</i>
+                    </p>
+                    <div style="background: rgba(125, 249, 255, 0.08); border-left: 3px solid #7df9ff; padding: 8px 12px; border-radius: 4px;">
+                        <p style="color: #dcd6f7; font-size: 0.92rem; margin: 0;">
+                            <b>Dica Prática para Hoje:</b> {dica_pratica}
+                        </p>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.markdown("---")
+                st.markdown("### 🔵 Mandala Astrológica (Roda do Mapa Natal)")
+                svg = svg_mandala(sujeito)
+                if svg: st.components.v1.html(svg, height=650, scrolling=True)
+
+                st.markdown("---")
+                st.markdown("### 🏛️ Cúspides e Regências das Casas Natais")
+                st.table(tab_c)
+
+                st.markdown("---")
+                st.markdown("### 🪐 Posicionamentos Natais nas Casas (com Orbes de Cúspides)")
+                st.caption("ℹ️ Orbes aplicadas: 10° antes das Casas Angulares (1, 4, 7, 10) | 5° antes das Sucedentes (2, 5, 8, 11) | 3° antes das Cadentes (3, 6, 9, 12).")
+                st.table(tab_pl)
+
                 st.markdown("---")
                 st.markdown(f"### 🔭 Os 9 Ponteiros Ativos em {DATA_ANALISE.strftime('%d/%m/%Y')}")
                 st.table(tab_pont)
 
-                trans_atuais = [("Netuno","Quadratura","Urano Natal","Urano"),("Plutão","Trígono","Sol Natal","Sol"),("Saturno","Conjunção","Meio do Céu","Saturno"),("Júpiter","Sextil","Vênus Natal","Vênus")]
-                tab_ta = [{"Trânsito": t, "Aspecto": a, "Natal Alvo": n, "Regência Ativada": f"{p} {reg_de(p)}"} for t, a, n, p in trans_atuais]
                 st.markdown("---")
                 st.markdown(f"### ⚡ Trânsitos de Planetas Lentos ({DATA_ANALISE.strftime('%d/%m/%Y')})")
                 st.table(tab_ta)
@@ -738,7 +824,7 @@ if st.session_state.mapa_gerado:
 
                 st.markdown("---")
                 st.markdown("## 🔒 Desbloqueie a Projeção de 12 Meses & Receba o seu Resumo")
-                st.info("Insira o seu WhatsApp ou E-mail e clique em **'Confirmar e Liberar'** para baixar o relatório estilizado em PDF ou recebê-lo via mensagem:")
+                st.info("Insira o seu WhatsApp ou E-mail e clique em **'Confirmar e Liberar'** para baixar o relatório executivo em PDF ou recebê-lo via mensagem:")
 
                 c_lead1, c_lead2 = st.columns([3, 1])
                 contato_in = c_lead1.text_input("WhatsApp (com DDD) ou E-mail:", value=st.session_state.contato_salvo, placeholder="ex: 11999998888 ou seu@email.com")
