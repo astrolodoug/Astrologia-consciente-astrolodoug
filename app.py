@@ -233,10 +233,9 @@ def desenhar_marcador(c, x, y, cor=HexColor('#0d47a1'), raio=2.5):
     p.close()
     c.drawPath(p, fill=1, stroke=0)
 
-# ==================== GERADOR DA DICA DO DIA ====================
+# ==================== GERADOR DA DICA DO DIA (CORRIGIDO) ====================
 def calcular_bussola_do_dia(dt_analise, tab_pont, trans_atuais):
     p_focal = tab_pont[0]['Ponteiro'] if tab_pont else "Ponteiro Solar"
-    t_focal = trans_atuais[0]['Trânsito'] if trans_atuais else "Saturno"
 
     banco_dicas = {
         "Ponteiro Solar": (
@@ -268,7 +267,7 @@ def calcular_bussola_do_dia(dt_analise, tab_pont, trans_atuais):
             "Adote uma abordagem inovadora para resolver um problema antigo da sua rotina."
         ),
         "Ponteiro de Netuno": (
-            "Sensibilidade e perceção intuitiva apuradas. Mantenha os pés no chão e filtre promessas vagas com critérios práticos.",
+            "Sensibilidade e percepção intuitiva apuradas. Mantenha os pés no chão e filtre promessas vagas com critérios práticos.",
             "Proteja a sua energia emocional e ancore intuições em dados e planeamento factual."
         ),
         "Ponteiro de Plutão": (
@@ -375,7 +374,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     cor_fundo_card = HexColor('#f7f9fc')
     cor_borda = HexColor('#c5d0e6')
 
-    # PÁGINA 1
+    # ========================== PÁGINA 1 ==========================
     c.setFillColor(cor_topo)
     c.rect(0, h_page - 80, w_page, 80, fill=1, stroke=0)
     c.setFillColor(cor_azul_escuro)
@@ -405,6 +404,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setLineWidth(1)
     c.line(40, h_page - 156, w_page - 40, h_page - 156)
 
+    # Box Esquerda: Tríade com Glifos
     c.setFillColor(cor_fundo_card)
     c.setStrokeColor(cor_borda)
     c.roundRect(40, h_page - 370, 275, 205, 5, fill=1, stroke=1)
@@ -438,6 +438,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         c.drawString(50, y_pt, seguro_texto(lp))
         y_pt -= 12
 
+    # Box Direita com Mandala Completa Idêntica ao Site
     c.setFillColor(HexColor('#ffffff'))
     c.setStrokeColor(cor_borda)
     c.roundRect(330, h_page - 370, 225, 205, 5, fill=1, stroke=1)
@@ -450,6 +451,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         c.setFont(FONTE_BOLD_NOME, 8.5)
         c.drawCentredString(442.5, h_page - 270, seguro_texto("Mandala Astrológica Natal"))
 
+    # Seção 2: SWOT Natal
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 390, seguro_texto("2. Análise Comportamental: Forças e Fraquezas Natais"))
@@ -493,6 +495,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
             c.drawString(65 + w_box, y_fr, seguro_texto(linhas_fr[1]))
         y_fr -= 14
 
+    # Seção 3: Ponteiros com Glifos
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 542, seguro_texto("3. Posicionamento Atual dos 9 Ponteiros"))
@@ -525,6 +528,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFont(FONTE_BOLD_NOME, 10.5)
     c.drawString(40, h_page - 32, seguro_texto("CRONOGRAMA PREDITIVO: OPORTUNIDADES, AMEAÇAS E DIRECIONAMENTO"))
 
+    # Seção 4: SWOT Preditivo
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 75, seguro_texto("4. Matriz Preditiva: Oportunidades & Ameaças dos Próximos 12 Meses"))
@@ -567,6 +571,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
             c.drawString(65 + w_box, y_am, seguro_texto(linhas_am[1]))
         y_am -= 14
 
+    # Seção 5: Cronograma
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 238, seguro_texto("5. Cronograma dos 9 Ponteiros & Gatilhos no Tempo (12 Meses)"))
@@ -581,6 +586,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         c.drawString(55, y_pr, seguro_texto(f"{p['Data']}: {p['Ponteiro']} em {p['Aspecto']} ({p['Regência']})"))
         y_pr -= 15
 
+    # Seção 6: Dedicatória
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, y_pr - 10, seguro_texto("6. Guia Didático & Dedicatória Oficial"))
@@ -604,7 +610,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFont(FONTE_BOLD_NOME, 8.5)
     c.drawString(55, y_card + 35, seguro_texto("Atendimentos, Formações e Estudos:"))
     c.setFillColor(HexColor('#ffffff'))
-    c.setFont(FONTE_UNICODE_NOME, 8)
+    c.setFont(FONTE_REGULAR, 8)
     c.drawString(55, y_card + 20, seguro_texto("Instagram: @astrolodoug  |  WhatsApp: +55 (11) 97711-7024  |  YouTube: @astrolodoug"))
 
     c.setStrokeColor(cor_borda)
@@ -619,7 +625,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     return buf.getvalue()
 
 # ==================== INTERFACE WEB STREAMLIT ====================
-# Indicador visual no topo para abertura dos dados
 st.markdown("""
 <div style="background: rgba(31, 27, 41, 0.95); border: 1.5px solid #7df9ff; border-radius: 10px; padding: 10px 16px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between;">
     <span style="color: #7df9ff; font-weight: 700; font-size: 0.98rem;">
@@ -776,7 +781,7 @@ if st.session_state.mapa_gerado:
                 trans_atuais = [("Netuno","Quadratura","Urano Natal","Urano"),("Plutão","Trígono","Sol Natal","Sol"),("Saturno","Conjunção","Meio do Céu","Saturno"),("Júpiter","Sextil","Vênus Natal","Vênus")]
                 tab_ta = [{"Trânsito": t, "Aspecto": a, "Natal Alvo": n, "Regência Ativada": f"{p} {reg_de(p)}"} for t, a, n, p in trans_atuais]
 
-                # ==================== BÚSSOLA CONSCIENTE DO DIA NA WEB ====================
+                # BÚSSOLA CONSCIENTE DO DIA (CORRIGIDA)
                 frase_dia, dica_pratica = calcular_bussola_do_dia(DATA_ANALISE, tab_pont, trans_atuais)
                 st.markdown(f"""
                 <div style="background: linear-gradient(135deg, #1f1b29 0%, #2b263b 100%);
@@ -842,14 +847,18 @@ if st.session_state.mapa_gerado:
 
                     tab_pont_pdf = [{"Ponteiro": it["Ponteiro"], "Pos": it["Posição Atual"], "Reg": it["Regência Ativada"]} for it in tab_pont]
 
-                    sol_sn = nome_sig(sujeito.sun['sign'])
-                    lua_sn = nome_sig(sujeito.moon['sign'])
-                    asc_sn = nome_sig(sujeito.first_house['sign'])
+                    sol_sn = nome_sig(obter_dado(sujeito.sun, 'sign', ''))
+                    lua_sn = nome_sig(obter_dado(sujeito.moon, 'sign', ''))
+                    asc_sn = nome_sig(obter_dado(sujeito.first_house, 'sign', ''))
+
+                    sol_pos = float(obter_dado(sujeito.sun, 'position', 0.0))
+                    lua_pos = float(obter_dado(sujeito.moon, 'position', 0.0))
+                    asc_pos = float(obter_dado(sujeito.first_house, 'position', 0.0))
 
                     triade_resumo = {
-                        "sol": f"{sujeito.sun['position']:.2f}° {GLIFOS.get(sol_sn, '')} {sol_sn} (Casa {mapa_casas_planetas.get('Sol',1)})",
-                        "lua": f"{sujeito.moon['position']:.2f}° {GLIFOS.get(lua_sn, '')} {lua_sn} (Casa {mapa_casas_planetas.get('Lua',1)})",
-                        "asc": f"{sujeito.first_house['position']:.2f}° {GLIFOS.get(asc_sn, '')} {asc_sn} (1ª Casa)"
+                        "sol": f"{sol_pos:.2f}° {GLIFOS.get(sol_sn, '')} {sol_sn} (Casa {mapa_casas_planetas.get('Sol',1)})",
+                        "lua": f"{lua_pos:.2f}° {GLIFOS.get(lua_sn, '')} {lua_sn} (Casa {mapa_casas_planetas.get('Lua',1)})",
+                        "asc": f"{asc_pos:.2f}° {GLIFOS.get(asc_sn, '')} {asc_sn} (1ª Casa)"
                     }
 
                     pdf_bytes = fabricar_pdf_estilizado(
