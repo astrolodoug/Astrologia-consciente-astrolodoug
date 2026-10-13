@@ -1,4 +1,4 @@
-import os, json, ssl, math, tempfile, urllib.request, urllib.parse
+import os, json, ssl, math, textwrap, urllib.request, urllib.parse
 from io import BytesIO
 from datetime import datetime, timedelta
 import streamlit as st
@@ -15,13 +15,6 @@ try:
     REPORTLAB_DISPONIVEL = True
 except ImportError:
     REPORTLAB_DISPONIVEL = False
-
-try:
-    from svglib.svglib import svg2rlg
-    from reportlab.graphics import renderPDF
-    SVGLIB_DISPONIVEL = True
-except ImportError:
-    SVGLIB_DISPONIVEL = False
 
 st.set_page_config(page_title="Astrologia Consciente | Astrolodoug", page_icon="✨", layout="wide")
 
@@ -166,89 +159,60 @@ def svg_mandala(subj):
     except Exception:
         return None
 
-# ==================== CONFIGURAÇÃO DE FONTES UNICODE REPORTLAB ====================
-FONTE_REGULAR = "Helvetica"
-FONTE_BOLD = "Helvetica-Bold"
-FONTE_OBLIQUE = "Helvetica-Oblique"
-UNICODE_FONTE_ATIVA = False
+# ==================== CARREGAMENTO AUTOMÁTICO DE FONTE UNICODE ====================
+FONTE_UNICODE_NOME = "Helvetica"
+UNICODE_ATIVA = False
 
-def inicializar_fontes():
-    global FONTE_REGULAR, FONTE_BOLD, FONTE_OBLIQUE, UNICODE_FONTE_ATIVA
+def garantir_fonte_unicode():
+    global FONTE_UNICODE_NOME, UNICODE_ATIVA
     if not REPORTLAB_DISPONIVEL:
         return
-    caminhos_reg = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/TTF/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        "C:/Windows/Fonts/DejaVuSans.ttf",
-        "/Library/Fonts/DejaVuSans.ttf"
-    ]
-    reg_found = next((p for p in caminhos_reg if os.path.exists(p)), None)
-    if not reg_found and os.path.exists("/usr/share/fonts"):
-        for root, _, files in os.walk("/usr/share/fonts"):
-            for f in files:
-                if "dejavu" in f.lower() and f.endswith(".ttf") and "sans" in f.lower() and "mono" not in f.lower() and "bold" not in f.lower():
-                    reg_found = os.path.join(root, f)
+    caminho_local = "DejaVuSans.ttf"
+    if not os.path.exists(caminho_local):
+        locais = [
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+            "C:/Windows/Fonts/DejaVuSans.ttf"
+        ]
+        for loc in locais:
+            if os.path.exists(loc):
+                caminho_local = loc
+                break
+
+    if not os.path.exists(caminho_local):
+        urls = [
+            "https://cdn.jsdelivr.net/gh/dejavu-fonts/dejavu-fonts@master/resources/DejaVuSans.ttf",
+            "https://raw.githubusercontent.com/dejavu-fonts/dejavu-fonts/master/resources/DejaVuSans.ttf"
+        ]
+        for u in urls:
+            try:
+                ctx = ssl._create_unverified_context()
+                req = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=5, context=ctx) as resp:
+                    with open("DejaVuSans.ttf", "wb") as f:
+                        f.write(resp.read())
+                if os.path.exists("DejaVuSans.ttf") and os.path.getsize("DejaVuSans.ttf") > 100000:
+                    caminho_local = "DejaVuSans.ttf"
                     break
-            if reg_found: break
+            except Exception:
+                pass
 
-    bold_found = next((p for p in [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
-        "C:/Windows/Fonts/DejaVuSans-Bold.ttf"
-    ] if os.path.exists(p)), None)
-
-    oblique_found = next((p for p in [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf",
-        "/usr/share/fonts/dejavu/DejaVuSans-Oblique.ttf",
-        "C:/Windows/Fonts/DejaVuSans-Oblique.ttf"
-    ] if os.path.exists(p)), None)
-
-    if reg_found:
+    if os.path.exists(caminho_local):
         try:
-            pdfmetrics.registerFont(TTFont("DejaVu", reg_found))
-            FONTE_REGULAR = "DejaVu"
-            UNICODE_FONTE_ATIVA = True
+            pdfmetrics.registerFont(TTFont("DejaVuUnicode", caminho_local))
+            FONTE_UNICODE_NOME = "DejaVuUnicode"
+            UNICODE_ATIVA = True
         except Exception:
             pass
 
-    if bold_found:
-        try:
-            pdfmetrics.registerFont(TTFont("DejaVu-Bold", bold_found))
-            FONTE_BOLD = "DejaVu-Bold"
-        except Exception:
-            pass
-    elif reg_found and UNICODE_FONTE_ATIVA:
-        FONTE_BOLD = "DejaVu"
-
-    if oblique_found:
-        try:
-            pdfmetrics.registerFont(TTFont("DejaVu-Oblique", oblique_found))
-            FONTE_OBLIQUE = "DejaVu-Oblique"
-        except Exception:
-            pass
-    elif reg_found and UNICODE_FONTE_ATIVA:
-        FONTE_OBLIQUE = "DejaVu"
-
-inicializar_fontes()
+garantir_fonte_unicode()
 
 def seguro_texto(t):
-    subst_base = {'–': '-', '—': '-', '"': '"', '"': '"', '“': '"', '”': '"', '’': "'", '‘': "'", '•': ''}
+    subst_base = {'–': '-', '—': '-', '“': '"', '”': '"', '’': "'", '‘': "'", '•': ''}
     texto = str(t)
     for k, v in subst_base.items():
         texto = texto.replace(k, v)
-
-    if not UNICODE_FONTE_ATIVA:
-        subst_latin = {
-            'Á':'A','À':'A','Ã':'A','Â':'A','É':'E','Ê':'E','Í':'I','Ó':'O','Ô':'O','Õ':'O','Ú':'U',
-            'á':'a','à':'a','ã':'a','â':'a','é':'e','ê':'e','í':'i','ó':'o','ô':'o','õ':'o','ú':'u',
-            'ç':'c','Ç':'C','º':'o','ª':'a','°':'o',
-            '♈':'[Ari]','♉':'[Tau]','♊':'[Gem]','♋':'[Can]','♌':'[Leo]','♍':'[Vir]',
-            '♎':'[Lib]','♏':'[Sco]','♐':'[Sag]','♑':'[Cap]','♒':'[Aqu]','♓':'[Pis]'
-        }
-        for k, v in subst_latin.items():
-            texto = texto.replace(k, v)
+    if not UNICODE_ATIVA:
         clean = [ch for ch in texto if ord(ch) < 256]
         return "".join(clean)
     return texto
@@ -263,19 +227,100 @@ def desenhar_marcador(c, x, y, cor=HexColor('#0d47a1'), raio=2.5):
     p.close()
     c.drawPath(p, fill=1, stroke=0)
 
-def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_data, tab_pont_raw, tab_proj_raw, svg_string=None):
+# ==================== MOTOR VETORIAL DA MANDALA DO SITE ====================
+def desenhar_mandala_astrologica_vetorial(c, cx, cy, raio, asc_abs, cuspides_abs, planetas_plot):
+    c.setFillColor(HexColor('#1f1b29'))
+    c.circle(cx, cy, raio, stroke=0, fill=1)
+
+    c.setStrokeColor(HexColor('#0d47a1'))
+    c.setLineWidth(1.5)
+    c.circle(cx, cy, raio, stroke=1, fill=0)
+
+    r_zodiaco_in = raio - 16
+    c.setStrokeColor(HexColor('#3a3350'))
+    c.setLineWidth(0.8)
+    c.circle(cx, cy, r_zodiaco_in, stroke=1, fill=0)
+
+    glifos_ordem = ["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"]
+    for i in range(12):
+        grau_ini = i * 30.0
+        ang_canto = (180.0 - (grau_ini - asc_abs)) % 360
+        ang_rad = math.radians(ang_canto)
+        x_div_out = cx + raio * math.cos(ang_rad)
+        y_div_out = cy + raio * math.sin(ang_rad)
+        x_div_in = cx + r_zodiaco_in * math.cos(ang_rad)
+        y_div_in = cy + r_zodiaco_in * math.sin(ang_rad)
+        c.setStrokeColor(HexColor('#3a3350'))
+        c.setLineWidth(0.6)
+        c.line(x_div_in, y_div_in, x_div_out, y_div_out)
+
+        ang_centro = math.radians((180.0 - ((grau_ini + 15.0) - asc_abs)) % 360)
+        r_txt = raio - 9
+        xg = cx + r_txt * math.cos(ang_centro)
+        yg = cy + r_txt * math.sin(ang_centro) - 3.5
+        c.setFillColor(HexColor('#7df9ff'))
+        c.setFont(FONTE_UNICODE_NOME, 7.5)
+        c.drawCentredString(xg, yg, glifos_ordem[i] if UNICODE_ATIVA else str(i+1))
+
+    r_hub = 22
+    c.setFillColor(HexColor('#102a43'))
+    c.setStrokeColor(HexColor('#0d47a1'))
+    c.setLineWidth(1)
+    c.circle(cx, cy, r_hub, stroke=1, fill=1)
+    c.setFillColor(HexColor('#7df9ff'))
+    c.setFont(FONTE_UNICODE_NOME, 5.5)
+    c.drawCentredString(cx, cy - 2, "NATAL")
+
+    for h in range(1, 13):
+        c_val = cuspides_abs.get(h, 0.0)
+        ang_c = math.radians((180.0 - (c_val - asc_abs)) % 360)
+        x_in = cx + r_hub * math.cos(ang_c)
+        y_in = cy + r_hub * math.sin(ang_c)
+        x_out = cx + r_zodiaco_in * math.cos(ang_c)
+        y_out = cy + r_zodiaco_in * math.sin(ang_c)
+
+        if h in [1, 4, 7, 10]:
+            c.setStrokeColor(HexColor('#7df9ff'))
+            c.setLineWidth(1.2)
+        else:
+            c.setStrokeColor(HexColor('#2e3850'))
+            c.setLineWidth(0.5)
+        c.line(x_in, y_in, x_out, y_out)
+
+        prox_h = 1 if h == 12 else h + 1
+        c_prox = cuspides_abs.get(prox_h, 0.0)
+        meio_c = ((c_val + ((c_prox - c_val) % 360) / 2.0)) % 360
+        ang_n = math.radians((180.0 - (meio_c - asc_abs)) % 360)
+        xn = cx + (r_hub + 10) * math.cos(ang_n)
+        yn = cy + (r_hub + 10) * math.sin(ang_n) - 2.5
+        c.setFillColor(HexColor('#a4b3d6'))
+        c.setFont(FONTE_UNICODE_NOME, 5)
+        c.drawCentredString(xn, yn, str(h))
+
+    for p_nome, p_abs, p_sigla in planetas_plot:
+        ang_p = math.radians((180.0 - (p_abs - asc_abs)) % 360)
+        xp = cx + 46 * math.cos(ang_p)
+        yp = cy + 46 * math.sin(ang_p)
+        c.setFillColor(HexColor('#7df9ff'))
+        c.circle(xp, yp, 2, stroke=0, fill=1)
+        lx = cx + 57 * math.cos(ang_p)
+        ly = cy + 57 * math.sin(ang_p) - 2.5
+        c.setFillColor(HexColor('#ffffff'))
+        c.setFont(FONTE_UNICODE_NOME, 5)
+        c.drawCentredString(lx, ly, seguro_texto(p_sigla))
+
+def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_data, tab_pont_raw, tab_proj_raw, asc_abs, cuspides_abs, planetas_plot):
     if not REPORTLAB_DISPONIVEL: return None
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w_page, h_page = A4
 
-    # PALETA EXECUTIVA: AZUL ESCURO LEGÍVEL
-    cor_topo = HexColor('#102a43')          # Azul marinho profundo
-    cor_azul_escuro = HexColor('#0d47a1')    # Azul safira de alto contraste e legibilidade
-    cor_verde = HexColor('#1b5e20')          # Verde esmeralda para forças/oportunidades
-    cor_alerta = HexColor('#b71c1c')         # Carmim/Atenção para fraquezas/ameaças
-    cor_fundo_card = HexColor('#f7f9fc')     # Cinza azulado muito suave
-    cor_borda = HexColor('#c5d0e6')          # Borda estruturada
+    cor_topo = HexColor('#102a43')
+    cor_azul_escuro = HexColor('#0d47a1')
+    cor_verde = HexColor('#1b5e20')
+    cor_alerta = HexColor('#b71c1c')
+    cor_fundo_card = HexColor('#f7f9fc')
+    cor_borda = HexColor('#c5d0e6')
 
     # ========================== PÁGINA 1 ==========================
     c.setFillColor(cor_topo)
@@ -284,11 +329,11 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.rect(0, h_page - 83, w_page, 3, fill=1, stroke=0)
 
     c.setFillColor(HexColor('#ffffff'))
-    c.setFont(FONTE_BOLD, 16)
+    c.setFont(FONTE_UNICODE_NOME, 15)
     c.drawString(40, h_page - 36, seguro_texto("ASTROLOGIA CONSCIENTE"))
-    c.setFont(FONTE_REGULAR, 9.5)
+    c.setFont(FONTE_UNICODE_NOME, 9.5)
     c.drawString(40, h_page - 52, seguro_texto("Relatório Executivo: Matriz Natal, Mandala & A Dança dos Ponteiros"))
-    c.setFont(FONTE_OBLIQUE, 8.5)
+    c.setFont(FONTE_UNICODE_NOME, 8)
     c.drawString(40, h_page - 66, seguro_texto("Pesquisa e Metodologia: Douglas Rosa (@astrolodoug)"))
 
     # Card Consulente
@@ -296,27 +341,27 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setStrokeColor(cor_borda)
     c.roundRect(40, h_page - 135, w_page - 80, 45, 5, fill=1, stroke=1)
     c.setFillColor(cor_topo)
-    c.setFont(FONTE_BOLD, 9.5)
+    c.setFont(FONTE_UNICODE_NOME, 9.5)
     c.drawString(50, h_page - 105, seguro_texto(f"Consulente: {nome_c} | Local: {cid_c}"))
-    c.setFont(FONTE_REGULAR, 8.5)
+    c.setFont(FONTE_UNICODE_NOME, 8.5)
     c.drawString(50, h_page - 120, seguro_texto(f"Data Base da Análise: {dt_ref} | Método: APRS e Trânsitos Ativos"))
 
-    # Seção 1: Identidade e Mandala
-    c.setFont(FONTE_BOLD, 11)
+    # Seção 1
+    c.setFont(FONTE_UNICODE_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 152, seguro_texto("1. Síntese da Personalidade & Mandala Astrológica"))
     c.setStrokeColor(cor_azul_escuro)
     c.setLineWidth(1)
     c.line(40, h_page - 156, w_page - 40, h_page - 156)
 
-    # Box Esquerda: Tríade com Glifos e Vocação
+    # Box Esquerda
     c.setFillColor(cor_fundo_card)
     c.setStrokeColor(cor_borda)
     c.roundRect(40, h_page - 370, 275, 205, 5, fill=1, stroke=1)
     c.setFillColor(cor_azul_escuro)
-    c.setFont(FONTE_BOLD, 9)
+    c.setFont(FONTE_UNICODE_NOME, 9)
     c.drawString(50, h_page - 175, seguro_texto("Eixo de Identidade & Temperamento:"))
-    
+
     itens_triade = [
         f"Sol Natal: {triade_info['sol']}",
         f"Lua Natal: {triade_info['lua']}",
@@ -326,55 +371,37 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     y_tr = h_page - 195
     for it in itens_triade:
         desenhar_marcador(c, 52, y_tr + 3, cor_azul_escuro)
-        c.setFont(FONTE_REGULAR, 8)
+        c.setFont(FONTE_UNICODE_NOME, 8)
         c.setFillColor(HexColor('#1f1b29'))
         c.drawString(60, y_tr, seguro_texto(it))
         y_tr -= 16
 
     c.setFillColor(cor_azul_escuro)
-    c.setFont(FONTE_BOLD, 8.5)
+    c.setFont(FONTE_UNICODE_NOME, 8.5)
     c.drawString(50, h_page - 275, seguro_texto("Área de Maior Vocação & Potencial:"))
-    c.setFont(FONTE_OBLIQUE, 8)
+    c.setFont(FONTE_UNICODE_NOME, 8)
     c.setFillColor(HexColor('#2b263b'))
     c.drawString(50, h_page - 290, seguro_texto(f"Setor Focal: {pot_texto['titulo']}"))
-    c.drawString(50, h_page - 304, seguro_texto(f"{pot_texto['descricao'][:55]}"))
-    c.drawString(50, h_page - 316, seguro_texto(f"{pot_texto['descricao'][55:115]}"))
+    linhas_pot = textwrap.wrap(pot_texto['descricao'], width=48)
+    y_pt = h_page - 304
+    for lp in linhas_pot[:2]:
+        c.drawString(50, y_pt, seguro_texto(lp))
+        y_pt -= 12
 
-    # Box Direita: Renderização Vetorial da Mandala Idêntica do Site
-    c.setFillColor(HexColor('#ffffff'))
+    # Box Direita com Mandala Vetorial
+    c.setFillColor(cor_fundo_card)
     c.setStrokeColor(cor_borda)
     c.roundRect(330, h_page - 370, 225, 205, 5, fill=1, stroke=1)
+    desenhar_mandala_astrologica_vetorial(
+        c, cx=442.5, cy=h_page - 267.5, raio=82,
+        asc_abs=asc_abs, cuspides_abs=cuspides_abs, planetas_plot=planetas_plot
+    )
+    c.setFillColor(HexColor('#666666'))
+    c.setFont(FONTE_UNICODE_NOME, 6.5)
+    c.drawCentredString(442.5, h_page - 364, seguro_texto("Mandala Oficial Vetorial Sincronizada"))
 
-    mandala_renderizada = False
-    if svg_string and SVGLIB_DISPONIVEL:
-        try:
-            with tempfile.NamedTemporaryFile(suffix=".svg", delete=False, mode="w", encoding="utf-8") as tf:
-                tf.write(svg_string)
-                tf_path = tf.name
-            drawing = svg2rlg(tf_path)
-            try: os.remove(tf_path)
-            except Exception: pass
-            if drawing:
-                tam_alvo = 195
-                escala = tam_alvo / max(drawing.width, drawing.height, 1)
-                drawing.scale(escala, escala)
-                drawing.width = drawing.width * escala
-                drawing.height = drawing.height * escala
-                renderPDF.draw(drawing, c, 345, h_page - 365)
-                mandala_renderizada = True
-        except Exception:
-            mandala_renderizada = False
-
-    if not mandala_renderizada:
-        c.setFillColor(cor_azul_escuro)
-        c.setFont(FONTE_BOLD, 9)
-        c.drawCentredString(442, h_page - 275, seguro_texto("Mandala Astrológica Natal"))
-        c.setFont(FONTE_OBLIQUE, 7.5)
-        c.setFillColor(HexColor('#555555'))
-        c.drawCentredString(442, h_page - 290, seguro_texto("Visualização vetorial sincronizada"))
-
-    # Seção 2: Forças e Fraquezas (SWOT Natal)
-    c.setFont(FONTE_BOLD, 11)
+    # Seção 2: SWOT Natal
+    c.setFont(FONTE_UNICODE_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 390, seguro_texto("2. Análise Comportamental: Forças e Fraquezas Natais"))
     c.setStrokeColor(cor_azul_escuro)
@@ -385,38 +412,40 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setStrokeColor(cor_verde)
     c.roundRect(40, h_page - 520, w_box, 118, 5, fill=1, stroke=1)
     c.setFillColor(cor_verde)
-    c.setFont(FONTE_BOLD, 9)
+    c.setFont(FONTE_UNICODE_NOME, 9)
     c.drawString(50, h_page - 410, seguro_texto("FORÇAS (Potenciais Inatos):"))
     y_f = h_page - 430
     for item in swot_data['forcas']:
         desenhar_marcador(c, 52, y_f + 3, cor_verde)
-        c.setFont(FONTE_REGULAR, 8)
+        c.setFont(FONTE_UNICODE_NOME, 8)
         c.setFillColor(HexColor('#1f1b29'))
-        c.drawString(60, y_f, seguro_texto(item[:45]))
-        if len(item) > 45:
+        linhas_f = textwrap.wrap(item, width=42)
+        c.drawString(60, y_f, seguro_texto(linhas_f[0]))
+        if len(linhas_f) > 1:
             y_f -= 10
-            c.drawString(60, y_f, seguro_texto(item[45:90]))
+            c.drawString(60, y_f, seguro_texto(linhas_f[1]))
         y_f -= 14
 
     c.setFillColor(HexColor('#ffebee'))
     c.setStrokeColor(cor_alerta)
     c.roundRect(45 + w_box, h_page - 520, w_box, 118, 5, fill=1, stroke=1)
     c.setFillColor(cor_alerta)
-    c.setFont(FONTE_BOLD, 9)
+    c.setFont(FONTE_UNICODE_NOME, 9)
     c.drawString(55 + w_box, h_page - 410, seguro_texto("FRAQUEZAS (Zonas de Atenção):"))
     y_fr = h_page - 430
     for item in swot_data['fraquezas']:
         desenhar_marcador(c, 57 + w_box, y_fr + 3, cor_alerta)
-        c.setFont(FONTE_REGULAR, 8)
+        c.setFont(FONTE_UNICODE_NOME, 8)
         c.setFillColor(HexColor('#1f1b29'))
-        c.drawString(65 + w_box, y_fr, seguro_texto(item[:45]))
-        if len(item) > 45:
+        linhas_fr = textwrap.wrap(item, width=42)
+        c.drawString(65 + w_box, y_fr, seguro_texto(linhas_fr[0]))
+        if len(linhas_fr) > 1:
             y_fr -= 10
-            c.drawString(65 + w_box, y_fr, seguro_texto(item[45:90]))
+            c.drawString(65 + w_box, y_fr, seguro_texto(linhas_fr[1]))
         y_fr -= 14
 
-    # Seção 3: Ponteiros Atuais
-    c.setFont(FONTE_BOLD, 11)
+    # Seção 3: Ponteiros
+    c.setFont(FONTE_UNICODE_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 542, seguro_texto("3. Posicionamento Atual dos 9 Ponteiros"))
     c.setStrokeColor(cor_azul_escuro)
@@ -425,14 +454,14 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     y_p = h_page - 564
     for it in tab_pont_raw[:9]:
         desenhar_marcador(c, 47, y_p + 3, cor_azul_escuro)
-        c.setFont(FONTE_REGULAR, 8)
+        c.setFont(FONTE_UNICODE_NOME, 8)
         c.setFillColor(HexColor('#1f1b29'))
         c.drawString(55, y_p, seguro_texto(f"{it['Ponteiro']}: {it['Pos']}  |  {it['Reg']}"))
         y_p -= 15
 
     c.setStrokeColor(cor_borda)
     c.line(40, 40, w_page - 40, 40)
-    c.setFont(FONTE_REGULAR, 7.5)
+    c.setFont(FONTE_UNICODE_NOME, 7.5)
     c.setFillColor(HexColor('#555555'))
     c.drawString(40, 28, seguro_texto("Astrologia Consciente | Douglas Rosa (@astrolodoug) - WhatsApp: (11) 97711-7024"))
     c.drawRightString(w_page - 40, 28, seguro_texto("Página 1 de 2"))
@@ -445,10 +474,11 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFillColor(cor_azul_escuro)
     c.rect(0, h_page - 53, w_page, 3, fill=1, stroke=0)
     c.setFillColor(HexColor('#ffffff'))
-    c.setFont(FONTE_BOLD, 10.5)
+    c.setFont(FONTE_UNICODE_NOME, 10.5)
     c.drawString(40, h_page - 32, seguro_texto("CRONOGRAMA PREDITIVO: OPORTUNIDADES, AMEAÇAS E DIRECIONAMENTO"))
 
-    c.setFont(FONTE_BOLD, 11)
+    # Seção 4: SWOT Preditivo
+    c.setFont(FONTE_UNICODE_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 75, seguro_texto("4. Matriz Preditiva: Oportunidades & Ameaças dos Próximos 12 Meses"))
     c.setStrokeColor(cor_azul_escuro)
@@ -458,37 +488,40 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setStrokeColor(cor_verde)
     c.roundRect(40, h_page - 215, w_box, 125, 5, fill=1, stroke=1)
     c.setFillColor(cor_verde)
-    c.setFont(FONTE_BOLD, 9)
+    c.setFont(FONTE_UNICODE_NOME, 9)
     c.drawString(50, h_page - 98, seguro_texto("OPORTUNIDADES (Janelas de Expansão):"))
     y_op = h_page - 116
     for item in swot_data['oportunidades']:
         desenhar_marcador(c, 52, y_op + 3, cor_verde)
-        c.setFont(FONTE_REGULAR, 8)
+        c.setFont(FONTE_UNICODE_NOME, 8)
         c.setFillColor(HexColor('#1f1b29'))
-        c.drawString(60, y_op, seguro_texto(item[:45]))
-        if len(item) > 45:
+        linhas_op = textwrap.wrap(item, width=42)
+        c.drawString(60, y_op, seguro_texto(linhas_op[0]))
+        if len(linhas_op) > 1:
             y_op -= 10
-            c.drawString(60, y_op, seguro_texto(item[45:90]))
+            c.drawString(60, y_op, seguro_texto(linhas_op[1]))
         y_op -= 14
 
     c.setFillColor(HexColor('#fff8e1'))
     c.setStrokeColor(HexColor('#f57c00'))
     c.roundRect(45 + w_box, h_page - 215, w_box, 125, 5, fill=1, stroke=1)
     c.setFillColor(HexColor('#e65100'))
-    c.setFont(FONTE_BOLD, 9)
+    c.setFont(FONTE_UNICODE_NOME, 9)
     c.drawString(55 + w_box, h_page - 98, seguro_texto("AMEAÇAS (Gatilhos de Rigor & Atenção):"))
     y_am = h_page - 116
     for item in swot_data['ameacas']:
         desenhar_marcador(c, 57 + w_box, y_am + 3, HexColor('#e65100'))
-        c.setFont(FONTE_REGULAR, 8)
+        c.setFont(FONTE_UNICODE_NOME, 8)
         c.setFillColor(HexColor('#1f1b29'))
-        c.drawString(65 + w_box, y_am, seguro_texto(item[:45]))
-        if len(item) > 45:
+        linhas_am = textwrap.wrap(item, width=42)
+        c.drawString(65 + w_box, y_am, seguro_texto(linhas_am[0]))
+        if len(linhas_am) > 1:
             y_am -= 10
-            c.drawString(65 + w_box, y_am, seguro_texto(item[45:90]))
+            c.drawString(65 + w_box, y_am, seguro_texto(linhas_am[1]))
         y_am -= 14
 
-    c.setFont(FONTE_BOLD, 11)
+    # Seção 5: Cronograma
+    c.setFont(FONTE_UNICODE_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, h_page - 238, seguro_texto("5. Cronograma dos 9 Ponteiros & Gatilhos no Tempo (12 Meses)"))
     c.setStrokeColor(cor_azul_escuro)
@@ -497,12 +530,13 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     y_pr = h_page - 260
     for p in tab_proj_raw[:7]:
         desenhar_marcador(c, 47, y_pr + 3, cor_azul_escuro)
-        c.setFont(FONTE_REGULAR, 8)
+        c.setFont(FONTE_UNICODE_NOME, 8)
         c.setFillColor(HexColor('#1f1b29'))
         c.drawString(55, y_pr, seguro_texto(f"{p['Data']}: {p['Ponteiro']} em {p['Aspecto']} ({p['Regência']})"))
         y_pr -= 15
 
-    c.setFont(FONTE_BOLD, 11)
+    # Seção 6: Dedicatória
+    c.setFont(FONTE_UNICODE_NOME, 11)
     c.setFillColor(cor_azul_escuro)
     c.drawString(40, y_pr - 10, seguro_texto("6. Guia Didático & Dedicatória Oficial"))
     c.setStrokeColor(cor_azul_escuro)
@@ -513,24 +547,24 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.roundRect(40, y_card, w_page - 80, 125, 6, fill=1, stroke=0)
 
     c.setFillColor(HexColor('#64b5f6'))
-    c.setFont(FONTE_BOLD, 9.5)
+    c.setFont(FONTE_UNICODE_NOME, 9.5)
     c.drawString(55, y_card + 102, seguro_texto("Uma mensagem de Douglas Rosa (@astrolodoug) para você:"))
     c.setFillColor(HexColor('#ffffff'))
-    c.setFont(FONTE_OBLIQUE, 8)
+    c.setFont(FONTE_UNICODE_NOME, 8)
     c.drawString(55, y_card + 85, seguro_texto('"O mapa astral não é uma sentença estática: é uma partitura rítmica viva.'))
     c.drawString(55, y_card + 72, seguro_texto('A Dança dos Ponteiros (APRS) revela o momento exato em que cada tema'))
     c.drawString(55, y_card + 59, seguro_texto('é convocado a amadurecer ou expandir. Use essas datas como coordenadas de ação."'))
 
     c.setFillColor(HexColor('#64b5f6'))
-    c.setFont(FONTE_BOLD, 8.5)
+    c.setFont(FONTE_UNICODE_NOME, 8.5)
     c.drawString(55, y_card + 35, seguro_texto("Atendimentos, Formações e Estudos:"))
     c.setFillColor(HexColor('#ffffff'))
-    c.setFont(FONTE_REGULAR, 8)
+    c.setFont(FONTE_UNICODE_NOME, 8)
     c.drawString(55, y_card + 20, seguro_texto("Instagram: @astrolodoug  |  WhatsApp: +55 (11) 97711-7024  |  YouTube: @astrolodoug"))
 
     c.setStrokeColor(cor_borda)
     c.line(40, 40, w_page - 40, 40)
-    c.setFont(FONTE_REGULAR, 7.5)
+    c.setFont(FONTE_UNICODE_NOME, 7.5)
     c.setFillColor(HexColor('#555555'))
     c.drawString(40, 28, seguro_texto("Astrologia Consciente | Todos os direitos reservados - @astrolodoug"))
     c.drawRightString(w_page - 40, 28, seguro_texto("Página 2 de 2"))
@@ -624,10 +658,11 @@ if st.session_state.mapa_gerado:
                 st.markdown("### 🏛️ Cúspides e Regências das Casas Natais")
                 st.table(tab_c)
 
-                planetas_dados = [("Sol", sujeito.sun, "SOL"), ("Lua", sujeito.moon, "LUA"), ("Mercúrio", sujeito.mercury, "MER"), ("Vênus", sujeito.venus, "VEN"), ("Marte", sujeito.mars, "MAR"), ("Júpiter", sujeito.jupiter, "JUP"), ("Saturno", sujeito.saturn, "SAT"), ("Urano", sujeito.uranus, "URA"), ("Netuno", sujeito.neptune, "NET"), ("Plutão", sujeito.pluto, "PLU")]
+                planetas_dados = [("Sol", sujeito.sun, "☉"), ("Lua", sujeito.moon, "☽"), ("Mercúrio", sujeito.mercury, "☿"), ("Vênus", sujeito.venus, "♀"), ("Marte", sujeito.mars, "♂"), ("Júpiter", sujeito.jupiter, "♃"), ("Saturno", sujeito.saturn, "♄"), ("Urano", sujeito.uranus, "♅"), ("Netuno", sujeito.neptune, "♆"), ("Plutão", sujeito.pluto, "♇")]
                 
                 tab_pl = []
                 mapa_casas_planetas = {}
+                planetas_plot = []
                 contagem_elem = {"Fogo": 0, "Terra": 0, "Ar": 0, "Água": 0}
                 mapa_signo_elem = {"Áries":"Fogo","Leão":"Fogo","Sagitário":"Fogo","Touro":"Terra","Virgem":"Terra","Capricórnio":"Terra","Gêmeos":"Ar","Libra":"Ar","Aquário":"Ar","Câncer":"Água","Escorpião":"Água","Peixes":"Água"}
 
@@ -638,6 +673,7 @@ if st.session_state.mapa_gerado:
                     s_nome = nome_sig(obter_dado(po, 'sign', ''))
                     contagem_elem[mapa_signo_elem.get(s_nome, "Ar")] += 1
 
+                    planetas_plot.append((pn, p_abs, f"{sigla_curta}{int(obter_dado(po, 'position', 0))}°"))
                     rotulo_casa = f"{num_casa}ª Casa (orbe de {int(orbe_val)}°)" if por_orbe else f"{num_casa}ª Casa"
                     pos_p = float(obter_dado(po, 'position', 0.0))
                     tab_pl.append({
@@ -668,22 +704,22 @@ if st.session_state.mapa_gerado:
                         "Compromisso prático com realizações de longo prazo"
                     ],
                     "fraquezas": [
-                        "Cobrança interna excessiva e autocensura",
+                        "Cobrança interna excessiva e autocrítica severa",
                         "Dificuldade em delegar processos críticos",
                         "Sobrecarga mental ao absorver múltiplas frentes",
-                        "Hesitação em abrir mão de métodos consolidados"
+                        "Hesitação em abrir mão de rotinas já consolidadas"
                     ],
                     "oportunidades": [
                         "Ativação de prestígio e expansão profissional",
                         "Ponteiros rápidos abrindo visibilidade e conexões",
-                        "Fase produtiva para lançamento de cursos e estudos",
+                        "Fase produtiva para lançamento de cursos e mentorias",
                         "Crescimento ordenado através da aplicação técnica"
                     ],
                     "ameacas": [
                         "Trânsitos de planetas lentos exigindo realismo estrito",
-                        "Atenção a minúcias contratuais e prazos formais",
+                        "Atenção redobrada a minúcias contratuais e prazos",
                         "Risco de cansaço se houver dispersão de foco",
-                        "Exigência de equilíbrio entre vida pública e pessoal"
+                        "Exigência de limites claros em parcerias e acordos"
                     ]
                 }
 
@@ -742,7 +778,8 @@ if st.session_state.mapa_gerado:
                     pdf_bytes = fabricar_pdf_estilizado(
                         nome_c=nome, cid_c=cidade, dt_ref=DATA_ANALISE.strftime('%d/%m/%Y'),
                         triade_info=triade_resumo, pot_texto=potencial_info, swot_data=swot_data,
-                        tab_pont_raw=tab_pont_pdf, tab_proj_raw=tab_fp, svg_string=svg
+                        tab_pont_raw=tab_pont_pdf, tab_proj_raw=tab_fp,
+                        asc_abs=asc_b, cuspides_abs=cuspides_abs, planetas_plot=planetas_plot
                     )
 
                     st.success(f"✅ Contacto registrado: **{st.session_state.contato_salvo}**! O seu relatório executivo completo foi gerado:")
