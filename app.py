@@ -73,7 +73,7 @@ GLIFOS = dict(SIGNOS)
 REGENTES = {"Áries":["Marte"],"Touro":["Vênus"],"Gêmeos":["Mercúrio"],"Câncer":["Lua"],"Leão":["Sol"],"Virgem":["Mercúrio"],"Libra":["Vênus"],"Escorpião":["Marte","Plutão"],"Sagitário":["Júpiter"],"Capricórnio":["Saturno"],"Aquário":["Saturno","Urano"],"Peixes":["Júpiter","Netuno"]}
 REG_TXT = {"Áries":"Marte","Touro":"Vênus","Gêmeos":"Mercúrio","Câncer":"Lua","Leão":"Sol","Virgem":"Mercúrio","Libra":"Vênus","Escorpião":"Marte e Plutão","Sagitário":"Júpiter","Capricórnio":"Saturno","Aquário":"Saturno e Urano","Peixes":"Júpiter e Netuno"}
 
-# ==================== CONVERSÃO SEXAGESIMAL (GRAUS E MINUTOS 1° = 60') ====================
+# ==================== CONVERSÃO SEXAGESIMAL (1° = 60') ====================
 def dec_para_graus_minutos(val):
     val = float(val) % 30.0
     graus = int(val)
@@ -264,7 +264,7 @@ def obter_geolocalizacao_segura(cidade_str, sigla_uf=""):
             return float(lat), float(lng), tz
 
     try:
-        geo = Nominatim(user_agent="astrologia_consciente_douglas_v4", timeout=12)
+        geo = Nominatim(user_agent="astrologia_consciente_douglas_v5", timeout=12)
         loc = geo.geocode(cidade_str)
         if loc:
             tf = TimezoneFinder()
@@ -378,7 +378,7 @@ def desenhar_marcador(c, x, y, cor=HexColor('#0d47a1'), raio=2.5):
     p.close()
     c.drawPath(p, fill=1, stroke=0)
 
-# ==================== RENDERIZADOR DINÂMICO DE CARDS SEM CORTES ====================
+# ==================== RENDERIZADOR DINÂMICO DE CARDS ====================
 def calcular_altura_necessaria(items, char_width=44, line_spacing=10.0, item_spacing=5.0):
     total_linhas = 0
     for it in items:
@@ -430,13 +430,7 @@ def desenhar_card_dinamico(c, x, y_top, width, title, items, font_name, font_bol
 def calcular_projecoes_reais(dt_analise, dt_nasc, asc_b, planetas_natal, casas_p, FATORES):
     dias_base = (dt_analise - dt_nasc).days
     eventos_futuros = []
-    angulos = [
-        (0, "Conjunção", "neutra"),
-        (60, "Sextil", "harmonica"),
-        (90, "Quadratura", "tensao"),
-        (120, "Trígono", "harmonica"),
-        (180, "Oposição", "tensao")
-    ]
+    angulos = [(0, "Conjunção", "neutra"), (60, "Sextil", "harmonica"), (90, "Quadratura", "tensao"), (120, "Trígono", "harmonica"), (180, "Oposição", "tensao")]
 
     for p_nome, ft, pb in FATORES:
         vel = 4.0 / ft
@@ -926,14 +920,15 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     buf.seek(0)
     return buf.getvalue()
 
-# ==================== INTERFACE WEB STREAMLIT ====================
-st.markdown("""
-<div style="background: rgba(31, 27, 41, 0.95); border: 1.5px solid #7df9ff; border-radius: 10px; padding: 10px 16px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between;">
-    <span style="color: #7df9ff; font-weight: 700; font-size: 0.98rem;">
-        👉 <b>Acesso aos Dados de Nascimento:</b> Toque na seta no canto superior esquerdo (<b>&gt;</b>) para abrir o painel lateral e inserir os seus dados.
-    </span>
-</div>
-""", unsafe_allow_html=True)
+# ==================== CONTROLE DO BANNER E NAVEGAÇÃO ====================
+if not st.session_state.mapa_gerado:
+    st.markdown("""
+    <div style="background: rgba(31, 27, 41, 0.95); border: 1.5px solid #7df9ff; border-radius: 10px; padding: 10px 16px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between;">
+        <span style="color: #7df9ff; font-weight: 700; font-size: 0.98rem;">
+            👉 <b>Acesso aos Dados de Nascimento:</b> Toque na seta no canto superior esquerdo (<b>&gt;</b>) para abrir o painel lateral e inserir os seus dados.
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.title("✨ Astrologia Consciente")
 st.markdown("### A Dança dos Ponteiros: Relatório Preditivo e Mandala")
@@ -980,6 +975,13 @@ FATORES = [("Ponteiro Solar",1.0,"Sol"),("Ponteiro de Mercúrio",1.066,"Mercúri
 
 if st.sidebar.button("🔮 Gerar Mapa, Mandala e Relatório"):
     st.session_state.mapa_gerado = True
+    st.rerun()
+
+if st.session_state.mapa_gerado:
+    st.sidebar.markdown("---")
+    st.sidebar.success("✅ Mapa e Previsões em Exibição!")
+    if st.sidebar.button("👁️ Fechar Painel e Ver Mapa", use_container_width=True):
+        st.rerun()
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📲 Conecte-se com Douglas Rosa")
@@ -988,12 +990,49 @@ st.sidebar.link_button("📸 Seguir no Instagram", "https://instagram.com/astrol
 st.sidebar.link_button("▶️ Acessar Canal no YouTube", "https://youtube.com/@astrolodoug?si=YimzRQs7yL1jJMSO", use_container_width=True)
 
 if st.session_state.mapa_gerado:
+    # SCRIPT DE FECHAMENTO AUTOMÁTICO DO PAINEL MOBILE
+    st.components.v1.html("""
+    <script>
+    function autoFecharSidebarMobile() {
+        try {
+            const pDoc = window.parent.document;
+            if (!pDoc) return;
+            const isMobile = window.parent.innerWidth <= 992;
+            const collapseBtn = pDoc.querySelector('[data-testid="stSidebarCollapseButton"] button') ||
+                                pDoc.querySelector('[data-testid="stSidebar"] button[kind="header"]') ||
+                                pDoc.querySelector('button[aria-label="Close sidebar"]') ||
+                                pDoc.querySelector('button[aria-label="Fechar barra lateral"]') ||
+                                pDoc.querySelector('[data-testid="stSidebarCollapseButton"]');
+            const backdrop = pDoc.querySelector('[data-testid="stSidebarBackdrop"]');
+            if (isMobile) {
+                if (backdrop && window.getComputedStyle(backdrop).display !== 'none') {
+                    backdrop.click();
+                } else if (collapseBtn) {
+                    collapseBtn.click();
+                }
+            }
+        } catch(err) {}
+    }
+    autoFecharSidebarMobile();
+    setTimeout(autoFecharSidebarMobile, 150);
+    setTimeout(autoFecharSidebarMobile, 450);
+    </script>
+    """, height=0)
+
+    # BARRA SUPERIOR DE CONTROLE E NAVEGAÇÃO
+    c_top_info, c_top_btn = st.columns([3, 1])
+    with c_top_info:
+        st.success(f"✅ **Mapa Ativo:** {nome} ({cidade}) | Data base: {DATA_ANALISE.strftime('%d/%m/%Y')}")
+    with c_top_btn:
+        if st.button("✏️ Alterar Dados", use_container_width=True):
+            st.session_state.mapa_gerado = False
+            st.rerun()
+
     with st.spinner("A processar cálculos astrológicos personalizados..."):
         try:
             lat, lng, tz_str = obter_geolocalizacao_segura(cidade, sigla_uf)
 
             sujeito = AstrologicalSubjectFactory.from_birth_data(name=nome, year=int(ano), month=int(mes), day=int(dia), hour=int(hora), minute=int(minuto), lat=float(lat), lng=float(lng), tz_str=tz_str)
-            st.success(f"Mapa gerado: {nome} ({cidade}) | Data base: {DATA_ANALISE.strftime('%d/%m/%Y')}")
 
             casas_ref = [("1ª Casa (Ascendente)", sujeito.first_house, 1), ("2ª Casa", sujeito.second_house, 2), ("3ª Casa", sujeito.third_house, 3), ("4ª Casa (Fundo do Céu)", sujeito.fourth_house, 4), ("5ª Casa", sujeito.fifth_house, 5), ("6ª Casa", sujeito.sixth_house, 6), ("7ª Casa (Descendente)", sujeito.seventh_house, 7), ("8ª Casa", sujeito.eighth_house, 8), ("9ª Casa", sujeito.ninth_house, 9), ("10ª Casa (Meio do Céu)", sujeito.tenth_house, 10), ("11ª Casa", sujeito.eleventh_house, 11), ("12ª Casa", sujeito.twelfth_house, 12)]
             cuspides_abs = {num: float(obter_dado(oc, 'abs_pos', 0.0)) for _, oc, num in casas_ref}
