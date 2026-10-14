@@ -29,14 +29,11 @@ if "contato_salvo" not in st.session_state:
 
 st.markdown("""
 <style>
-/* Fundo Geral e Cabeçalho Nativo */
 .stApp { background: #2b263b; color: #f0f0f0; }
 header[data-testid="stHeader"] {
     background-color: #1f1b29 !important;
     border-bottom: 1px solid rgba(125, 249, 255, 0.2) !important;
 }
-
-/* Botão da Seta para Abrir os Dados no Telemóvel */
 [data-testid="stSidebarCollapsedControl"] {
     background-color: #1f1b29 !important;
     border: 1.5px solid #7df9ff !important;
@@ -44,18 +41,11 @@ header[data-testid="stHeader"] {
     padding: 3px 8px !important;
     box-shadow: 0 0 12px rgba(125, 249, 255, 0.35) !important;
 }
-[data-testid="stSidebarCollapsedControl"]:hover {
-    background-color: #2b263b !important;
-}
-[data-testid="stSidebarCollapsedControl"] svg {
-    fill: #7df9ff !important;
-    stroke: #7df9ff !important;
-}
-
+[data-testid="stSidebarCollapsedControl"]:hover { background-color: #2b263b !important; }
+[data-testid="stSidebarCollapsedControl"] svg { fill: #7df9ff !important; stroke: #7df9ff !important; }
 [data-testid="stSidebar"] { background: #1f1b29; color: #f0f0f0; }
 h1, h2, h3 { color: #7df9ff !important; }
 p, label, span { color: #dcd6f7 !important; }
-
 .stButton > button {
     background: linear-gradient(135deg, #7df9ff 0%, #48cae4 100%) !important;
     border: 1px solid #7df9ff !important;
@@ -102,6 +92,67 @@ POTENCIAL_CASAS = {
     10: "Construção de autoridade profissional, liderança pública, reputação e legado de carreira.",
     11: "Articulação de grandes projetos coletivos, impacto comunitário e visão de futuro inovadora.",
     12: "Sensibilidade intuitiva refinada, compreensão psíquica e talento para atuar nos bastidores."
+}
+
+# ==================== BANCO ARQUETÍPICO PARA ANÁLISE DINÂMICA ====================
+FORCAS_SIGNOS = {
+    "Áries": "Pioneirismo, assertividade nas decisões e coragem para abrir novos caminhos.",
+    "Touro": "Capacidade de sustentação material, persistência e fidelidade a valores práticos.",
+    "Gêmeos": "Versatilidade mental, rapidez de articulação lógica e talento para conectar saberes.",
+    "Câncer": "Faro intuitivo aguçado, empatia protetora e poder de mobilização emocional genuína.",
+    "Leão": "Magnetismo pessoal radiante, generosidade autoral e autoridade natural na liderança.",
+    "Virgem": "Discernimento analítico cirúrgico, domínio técnico impecável e constante busca por excelência.",
+    "Libra": "Senso estético refinado, habilidade diplomática nata e visão equilibrada em negociações.",
+    "Escorpião": "Percepção psicológica profunda, poder regenerativo perante crises e foco inabalável.",
+    "Sagitário": "Visão ampla de longo prazo, entusiasmo expansivo e habilidade natural para ensinar e inspirar.",
+    "Capricórnio": "Maturidade exemplar, visão de legado profissional e disciplina na gestão do tempo.",
+    "Aquário": "Inovação visionária, independência intelectual e facilidade em articular projetos coletivos.",
+    "Peixes": "Sensibilidade psíquica refinada, capacidade de síntese simbólica e empatia desinteressada."
+}
+
+FRAQUEZAS_SIGNOS = {
+    "Áries": "Impaciência com processos lentos, tendência a ações impulsivas e reatividade imediata.",
+    "Touro": "Resistência teimosa a mudanças de cenário e apego excessivo a rotinas consolidadas.",
+    "Gêmeos": "Dispersão do foco por excesso de estímulos simultâneos e dificuldade em aprofundar um único tema.",
+    "Câncer": "Hipersensibilidade a oscilações alheias e tendência a se fechar em defesas emocionais.",
+    "Leão": "Vulnerabilidade ao orgulho pessoal, necessidade de validação e relutância em atuar nos bastidores.",
+    "Virgem": "Autocobrança implacável, tendência ao perfeccionismo paralisante e apego crítico a minúcias.",
+    "Libra": "Hesitação no momento de confrontos necessários e adiamento de decisões para agradar a terceiros.",
+    "Escorpião": "Desconfiança instintiva prévia, dificuldade em delegar e propensão a guardar tensões não ditas.",
+    "Sagitário": "Otimismo desmedido com prazos operacionais, impaciência com detalhes e dispersão teórica.",
+    "Capricórnio": "Rigor excessivo consigo e com outros, pessimismo cautelar e dificuldade em desfrutar o presente.",
+    "Aquário": "Distanciamento afetivo sob pressão, rebeldia contra métodos tradicionais e excesso de teoria.",
+    "Peixes": "Dificuldade em delimitar fronteiras claras, tendência à sobrecarga psíquica e fuga da rotina prática."
+}
+
+FORCAS_CASAS = {
+    1: "Iniciativa individual soberana e forte presença pessoal.",
+    2: "Talento pragmático para construir lastro e monetizar habilidades.",
+    3: "Excelente didática comunicativa e agilidade no trânsito de informações.",
+    4: "Construção de alicerces sólidos e resguardo consciente da intimidade.",
+    5: "Autenticidade criativa, liderança autoral e poder de expressão contagiante.",
+    6: "Aperfeiçoamento diário do método, eficiência prática e gestão apurada da rotina.",
+    7: "Habilidade de aliança com parceiros de alto nível e pactuação estratégica.",
+    8: "Capacidade de gerir recursos partilhados e transformar adversidades em poder.",
+    9: "Facilidade de expansão acadêmica, internacionalização e visão filosófica.",
+    10: "Construção sólida de reputação, autoridade pública e ascensão consistente.",
+    11: "Articulação de grupos estratégicos e rede de apoio qualificada.",
+    12: "Sabedoria de bastidores, leitura das entrelinhas e proteção intuitiva."
+}
+
+FRAQUEZAS_CASAS = {
+    1: "Sobrecarga física por assumir todas as frentes sem pedir auxílio.",
+    2: "Ansiedade quanto à estabilidade material gerando cautela desmedida nos passos.",
+    3: "Sobrecarga de estímulos e comunicações fragmentadas que consomem o foco principal.",
+    4: "Apego a padrões do passado e hesitação em desbravar novos territórios profissionais.",
+    5: "Risco de frustração caso as criações autorais não recebam reconhecimento imediato.",
+    6: "Esgotamento por excesso de demandas diárias e dificuldade de relaxar o controle.",
+    7: "Dependência excessiva da anuência ou concordância de parceiros para agir.",
+    8: "Tensão silenciosa com partilhas, investimentos de risco e desgaste de controle.",
+    9: "Inquietação constante que dificulta a ancoragem no trabalho prático do momento.",
+    10: "Cobrança extrema por status e medo de errar perante o público ou superiores.",
+    11: "Desgaste de energia em causas ou projetos coletivos sem contrapartida justa.",
+    12: "Tendência a isolamento autoprotetor quando surgem pressões externas mais duras."
 }
 
 ESTADOS_BR = [
@@ -159,8 +210,7 @@ CIDADES_SP_BASE = sorted(["São Paulo", "Guarulhos", "Campinas", "São Bernardo 
 @st.cache_data(ttl=86400, show_spinner=False)
 def carregar_municipios(sigla_uf):
     mapa_direto = {"AC": CIDADES_AC, "AP": CIDADES_AP, "RR": CIDADES_RR, "RJ": CIDADES_RJ, "BA": CIDADES_BA, "PR": CIDADES_PR, "RS": CIDADES_RS, "PE": CIDADES_PE, "CE": CIDADES_CE, "PA": CIDADES_PA}
-    if sigla_uf in mapa_direto:
-        return mapa_direto[sigla_uf]
+    if sigla_uf in mapa_direto: return mapa_direto[sigla_uf]
     try:
         url_bapi = f"https://brasilapi.com.br/api/ibge/municipios/v1/{sigla_uf}"
         ctx = ssl._create_unverified_context()
@@ -195,7 +245,7 @@ def obter_geolocalizacao_segura(cidade_str, sigla_uf=""):
             return float(lat), float(lng), tz
 
     try:
-        geo = Nominatim(user_agent="astrologia_consciente_douglas_v2", timeout=12)
+        geo = Nominatim(user_agent="astrologia_consciente_douglas_v3", timeout=12)
         loc = geo.geocode(cidade_str)
         if loc:
             tf = TimezoneFinder()
@@ -251,7 +301,7 @@ def svg_mandala(subj):
     except Exception:
         return None
 
-# ==================== CARREGAMENTO LOCAL DA FONTE DEJAVU (BLINDADO) ====================
+# ==================== CARREGAMENTO LOCAL DA FONTE DEJAVU ====================
 FONTE_UNICODE_NOME = "Helvetica"
 FONTE_BOLD_NOME = "Helvetica-Bold"
 FONTE_OBLIQUE_NOME = "Helvetica-Oblique"
@@ -315,49 +365,173 @@ def desenhar_marcador(c, x, y, cor=HexColor('#0d47a1'), raio=2.5):
     p.close()
     c.drawPath(p, fill=1, stroke=0)
 
-# ==================== GERADOR DA DICA DO DIA ====================
-def calcular_bussola_do_dia(dt_analise, tab_pont, trans_atuais):
-    p_focal = tab_pont[0]['Ponteiro'] if tab_pont else "Ponteiro Solar"
+# ==================== CÁLCULO PREDITIVO REAL (12 MESES) ====================
+def calcular_projecoes_reais(dt_analise, dt_nasc, asc_b, planetas_natal, casas_p, FATORES):
+    dias_base = (dt_analise - dt_nasc).days
+    eventos_futuros = []
+    angulos = [
+        (0, "Conjunção", "neutra"),
+        (60, "Sextil", "harmonica"),
+        (90, "Quadratura", "tensao"),
+        (120, "Trígono", "harmonica"),
+        (180, "Oposição", "tensao")
+    ]
 
-    banco_dicas = {
-        "Ponteiro Solar": (
-            "Hoje o tempo exige centralidade, consciência autoral e clareza no propósito. Assuma o leme das suas escolhas sem esperar aprovação externa.",
-            "Defina uma prioridade inegociável para hoje e conclua-a antes de iniciar novas tarefas."
-        ),
-        "Ponteiro de Mercúrio": (
-            "Dia de alta mobilidade intelectual, trocas estratégicas e precisão na fala. O método lógico supera qualquer ruído comunicativo.",
-            "Revise contratos, organize documentos e responda a pendências importantes com objetividade."
-        ),
-        "Ponteiro de Vênus": (
-            "O compasso favorece a diplomacia consciente, o valor pessoal e o refinamento de parcerias sólidas.",
-            "Avalie o valor real do seu tempo e estabeleça acordos em que o reconhecimento recíproco seja nítido."
-        ),
-        "Ponteiro de Marte": (
-            "Energia propícia para romper inércias e tomar decisões pragmáticas. Conduza o impulso com estratégia, evitando confrontos estéreis.",
-            "Canalize a força de ação para finalizar uma tarefa que vinha a ser adiada."
-        ),
-        "Ponteiro de Júpiter": (
-            "Momento de abertura de visão e expansão estratégica. Confie no plano a longo prazo e amplie os seus horizontes de atuação.",
-            "Dedique tempo ao estudo, ao planeamento de novos passos profissionais ou ao contato com mentores."
-        ),
-        "Ponteiro de Saturno": (
-            "O dia convida à sobriedade, rigor técnico e maturidade. A lentidão consciente hoje poupa retrabalho amanhã.",
-            "Filtre excessos, corte distrações e concentre-se na consolidação de estruturas sólidas."
-        ),
-        "Ponteiro de Urano": (
-            "Dia dinâmico que premia a inventividade e a capacidade de adaptação rápida. Quebre protocolos obsoletos com discernimento.",
-            "Adote uma abordagem inovadora para resolver um problema antigo da sua rotina."
-        ),
-        "Ponteiro de Netuno": (
-            "Sensibilidade e percepção intuitiva apuradas. Mantenha os pés no chão e filtre promessas vagas com critérios práticos.",
-            "Proteja a sua energia emocional e ancore intuições em dados e planeamento factual."
-        ),
-        "Ponteiro de Plutão": (
-            "Profundidade analítica e poder de regeneração. Reconheça o que já cumpriu o seu ciclo para libertar espaço ao crescimento.",
-            "Desapegue de hábitos desgastados e tome uma atitude corajosa de transformação pessoal."
-        )
+    for p_nome, ft, pb in FATORES:
+        vel = 4.0 / ft
+        pos_atual = (asc_b + (dias_base * vel)) % 360
+
+        for pn, gn, sn, cn in planetas_natal:
+            for ang, asp_nome, tipo in angulos:
+                alvos = [(gn + ang) % 360] if ang in [0, 180] else [(gn + ang) % 360, (gn - ang) % 360]
+                for alvo in alvos:
+                    dist = (alvo - pos_atual) % 360
+                    dias_ate = dist / vel
+                    if 1 <= dias_ate <= 365:
+                        dt_evento = dt_analise + timedelta(days=round(dias_ate))
+                        reg_lista = casas_p.get(pb, [])
+                        reg_txt = f"Regente das {', '.join(reg_lista)}" if reg_lista else f"Ativação de {pb}"
+                        eventos_futuros.append({
+                            "dias": dias_ate,
+                            "data_dt": dt_evento,
+                            "data_str": dt_evento.strftime('%d/%m/%Y'),
+                            "ponteiro": p_nome,
+                            "planeta_base": pb,
+                            "aspecto": f"{asp_nome} com {pn} Natal",
+                            "alvo_nome": pn,
+                            "alvo_casa": cn,
+                            "tipo_asp": tipo,
+                            "regencia": reg_txt
+                        })
+
+    eventos_futuros.sort(key=lambda x: x['dias'])
+    return eventos_futuros
+
+def selecionar_cronograma_equilibrado(eventos_futuros, total=8):
+    if not eventos_futuros: return []
+    if len(eventos_futuros) <= total: return eventos_futuros
+    selecionados = []
+    ultimo_dia = -30
+    for ev in eventos_futuros:
+        if ev['dias'] - ultimo_dia >= 25:
+            selecionados.append(ev)
+            ultimo_dia = ev['dias']
+            if len(selecionados) == total: break
+    if len(selecionados) < total:
+        for ev in eventos_futuros:
+            if ev not in selecionados:
+                selecionados.append(ev)
+                if len(selecionados) == total: break
+    selecionados.sort(key=lambda x: x['dias'])
+    return selecionados
+
+# ==================== GERADOR DINÂMICO DE SWOT ====================
+def gerar_swot_dinamico(sol_info, lua_info, asc_info, elem_dominante, contagem_elem, eventos_futuros):
+    sol_signo = sol_info['signo']
+    sol_casa = sol_info['casa']
+    lua_signo = lua_info['signo']
+    lua_casa = lua_info['casa']
+    asc_signo = asc_info['signo']
+
+    FORCAS_ELEM = {
+        "Fogo": "Vitalidade contagiante, entusiasmo inesgotável e coragem pioneira para agir.",
+        "Terra": "Lastro prático incomparável, capacidade de sustentação e disciplina na execução.",
+        "Ar": "Agilidade lógica, facilidade em criar pontes e visão estratégica articulada.",
+        "Água": "Profundidade intuitiva, leitura empática do ambiente e força de adaptação psíquica."
     }
-    return banco_dicas.get(p_focal, banco_dicas["Ponteiro Solar"])
+
+    FRAQUEZAS_ELEM = {
+        "Fogo": "Risco de estresse por excesso de velocidade e impaciência com a rotina comum.",
+        "Terra": "Resistência excessiva a desapegar de rotinas conhecidas e lentidão na mudança.",
+        "Ar": "Sobrecarga mental por excesso de ideias simultâneas e dispersão de foco prático.",
+        "Água": "Hipersensibilidade psíquica às oscilações do ambiente e vulnerabilidade emocional."
+    }
+
+    forcas = [
+        f"Identidade Solar ({sol_signo} na Casa {sol_casa}): {FORCAS_SIGNOS.get(sol_signo, '')} {FORCAS_CASAS.get(sol_casa, '')}",
+        f"Inteligência Emocional ({lua_signo} na Casa {lua_casa}): {FORCAS_SIGNOS.get(lua_signo, '')} {FORCAS_CASAS.get(lua_casa, '')}",
+        f"Presença e Expressão (Ascendente em {asc_signo}): {FORCAS_SIGNOS.get(asc_signo, '')}",
+        f"Temperamento ({elem_dominante}): {FORCAS_ELEM.get(elem_dominante, '')}"
+    ]
+
+    fraquezas = [
+        f"Ponto Cego de Liderança ({sol_signo}): {FRAQUEZAS_SIGNOS.get(sol_signo, '')}",
+        f"Vulnerabilidade Emocional ({lua_signo} na Casa {lua_casa}): {FRAQUEZAS_SIGNOS.get(lua_signo, '')} {FRAQUEZAS_CASAS.get(lua_casa, '')}",
+        f"Atrito de Expressão (Ascendente em {asc_signo}): {FRAQUEZAS_SIGNOS.get(asc_signo, '')}",
+        f"Gestão de Energia ({elem_dominante}): {FRAQUEZAS_ELEM.get(elem_dominante, '')}"
+    ]
+
+    oportunidades = []
+    for ev in eventos_futuros:
+        if ev['tipo_asp'] in ['harmonica', 'neutra'] or any(p in ev['ponteiro'] for p in ['Júpiter', 'Vênus', 'Solar']):
+            txt = f"{ev['data_str']} ({ev['ponteiro']} em {ev['aspecto']}): Janela propícia para avanço em assuntos da Casa {ev['alvo_casa']} ({ev['regencia']})."
+            if txt not in oportunidades:
+                oportunidades.append(txt)
+        if len(oportunidades) >= 4: break
+
+    while len(oportunidades) < 4:
+        oportunidades.append("Ciclo favorável para expansão estratégica, difusão do trabalho e consolidação de novas alianças.")
+
+    ameacas = []
+    for ev in eventos_futuros:
+        if ev['tipo_asp'] == 'tensao' or any(p in ev['ponteiro'] for p in ['Saturno', 'Plutão', 'Marte']):
+            txt = f"{ev['data_str']} ({ev['ponteiro']} em {ev['aspecto']}): Exigência de disciplina e rigor; evite impulsividade e blinde acordos na Casa {ev['alvo_casa']}."
+            if txt not in ameacas:
+                ameacas.append(txt)
+        if len(ameacas) >= 4: break
+
+    while len(ameacas) < 4:
+        ameacas.append("Atenção à sobrecarga de responsabilidades; mantenha critérios claros de foco e paciência.")
+
+    return {
+        "elemento_dominante": f"{elem_dominante} ({contagem_elem[elem_dominante]} planetas)",
+        "forcas": forcas,
+        "fraquezas": fraquezas,
+        "oportunidades": oportunidades,
+        "ameacas": ameacas
+    }
+
+# ==================== GERADOR DA DICA DO DIA ====================
+def calcular_bussola_do_dia(dt_analise, aspetos_hoje, tab_pont):
+    TEMAS_CASAS = {
+        1: ("afirmação pessoal, vitalidade e pioneirismo", "Tome as rédeas de uma decisão pessoal sem delegar a sua autoridade."),
+        2: ("gestão de recursos, valores e segurança material", "Organize prioridades financeiras e precifique o seu trabalho com clareza."),
+        3: ("comunicação estratégica, negociações e intercâmbio", "Envie propostas, esclareça pendências e foque na clareza do discurso."),
+        4: ("segurança emocional, intimidade e alicerces estruturais", "Proteja o seu espaço íntimo e fortaleça as bases de apoio pessoal."),
+        5: ("expressão criativa, magnetismo autoral e projetos", "Coloque a sua assinatura criativa em tudo o que produzir hoje."),
+        6: ("organização do método diário, eficiência prática e rotina", "Aperfeiçoe o seu método de rotina e elimine gargalos que consomem tempo."),
+        7: ("parcerias estratégicas, contratos e diálogo a dois", "Alinhe expectativas em acordos e busque equilíbrio diplomático consciente."),
+        8: ("transformações profundas, discernimento e gestão de crises", "Desapegue do que já não agrega valor e assuma o controle emocional sob pressão."),
+        9: ("expansão de visão, novos estudos e horizontes a longo prazo", "Dedique tempo a leituras profundas e ao planeamento estratégico futuro."),
+        10: ("reputação profissional, carreira e consolidação de legado", "Posicione-se com firmeza perante clientes ou líderes; a sua competência fala alto."),
+        11: ("projetos coletivos, impacto comunitário e visão de futuro", "Articule conexões com pessoas que partilham dos seus valores e projetos."),
+        12: ("recolhimento estratégico, intuição psíquica e bastidores", "Trabalhe nos bastidores, desacelere o ritmo e confie na sua intuição técnica.")
+    }
+
+    if aspetos_hoje:
+        focal = aspetos_hoje[0]
+        p_nome = focal['ponteiro']
+        alvo = focal['alvo_nome']
+        asp = focal['aspeto']
+        casa = focal['casa_ponteiro']
+        tipo = focal['tipo']
+        tema_txt, dica_acao = TEMAS_CASAS.get(casa, ("direcionamento consciente", "Foque na prioridade prática do seu dia."))
+
+        if tipo == "tensao":
+            frase = f"O {p_nome} ativa hoje por {asp} o seu {alvo} Natal, incidindo sobre a sua {casa}ª Casa ({tema_txt}). Este compasso traz um filtro de maturidade: não reaja por impulso; conduza a pressão com estratégia e paciência."
+            dica = f"{dica_acao} Evite confrontos desnecessários e estabeleça limites seguros no setor da Casa {casa}."
+        else:
+            frase = f"O {p_nome} conecta-se harmonicamente por {asp} ao seu {alvo} Natal na sua {casa}ª Casa ({tema_txt}). A matriz do dia abre fluidez e respaldo para estruturar passos sólidos e visibilidade."
+            dica = f"{dica_acao} Aproveite a janela favorável para avançar em iniciativas estratégicas da Casa {casa}."
+        return frase, dica
+    else:
+        p_focal = tab_pont[0] if tab_pont else {"nome": "Ponteiro Solar", "casa": 1}
+        casa = p_focal.get('casa', 1)
+        p_nome = p_focal.get('Ponteiro', 'Ponteiro Solar')
+        tema_txt, dica_acao = TEMAS_CASAS.get(casa, ("consolidação de objetivos", "Dedique energia à sua meta principal."))
+        frase = f"O {p_nome} transita hoje pela sua {casa}ª Casa ({tema_txt}). O tempo convida a direcionar a sua força consciente para estruturar este território de vida."
+        dica = f"{dica_acao} Defina uma meta clara para a sua {casa}ª Casa e conclua-a com método."
+        return frase, dica
 
 # ==================== MANDALA ASTROLÓGICA OFICIAL DO SITE ====================
 def gerar_mandala_astrologica_png(planetas_pos, cuspides_pos, asc_grau):
@@ -435,7 +609,6 @@ def gerar_mandala_astrologica_png(planetas_pos, cuspides_pos, asc_grau):
     plt.tight_layout()
     plt.savefig(buf, format='png', dpi=220, bbox_inches='tight', facecolor=fig.get_facecolor(), edgecolor='none')
     plt.close(fig)
-    buf.seek(0)
     return buf.getvalue()
 
 def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_data, tab_pont_raw, tab_proj_raw, planetas_pos, cuspides_pos, asc_grau):
@@ -708,7 +881,6 @@ st.markdown("### A Dança dos Ponteiros: Relatório Preditivo e Mandala")
 
 st.sidebar.header("⚙️ Painel de Dados do Consulente")
 
-# CAMPO DE NOME LIMPO COM PLACEHOLDER "Inserir nome"
 nome_input = st.sidebar.text_input("Nome Completo", value="", placeholder="Inserir nome")
 nome = nome_input.strip() if nome_input.strip() else "Consulente"
 
@@ -757,7 +929,7 @@ st.sidebar.link_button("📸 Seguir no Instagram", "https://instagram.com/astrol
 st.sidebar.link_button("▶️ Acessar Canal no YouTube", "https://youtube.com/@astrolodoug?si=YimzRQs7yL1jJMSO", use_container_width=True)
 
 if st.session_state.mapa_gerado:
-    with st.spinner("A processar cálculos astrológicos..."):
+    with st.spinner("A processar cálculos astrológicos personalizados..."):
         try:
             lat, lng, tz_str = obter_geolocalizacao_segura(cidade, sigla_uf)
 
@@ -781,6 +953,7 @@ if st.session_state.mapa_gerado:
             tab_pl = []
             mapa_casas_planetas = {}
             planetas_mandala = []
+            natal_para_aspeto = []
             contagem_elem = {"Fogo": 0, "Terra": 0, "Ar": 0, "Água": 0}
             mapa_signo_elem = {"Áries":"Fogo","Leão":"Fogo","Sagitário":"Fogo","Touro":"Terra","Virgem":"Terra","Capricórnio":"Terra","Gêmeos":"Ar","Libra":"Ar","Aquário":"Ar","Câncer":"Água","Escorpião":"Água","Peixes":"Água"}
 
@@ -792,6 +965,8 @@ if st.session_state.mapa_gerado:
                 contagem_elem[mapa_signo_elem.get(s_nome, "Ar")] += 1
 
                 planetas_mandala.append((pn, p_abs, sigla_glifo))
+                natal_para_aspeto.append((pn, p_abs, s_nome, num_casa))
+
                 rotulo_casa = f"{num_casa}ª Casa (orbe de {int(orbe_val)}°)" if por_orbe else f"{num_casa}ª Casa"
                 pos_p = float(obter_dado(po, 'position', 0.0))
                 tab_pl.append({
@@ -808,33 +983,6 @@ if st.session_state.mapa_gerado:
             }
 
             elem_dominante = max(contagem_elem, key=contagem_elem.get)
-            swot_data = {
-                "elemento_dominante": f"{elem_dominante} ({contagem_elem[elem_dominante]} planetas)",
-                "forcas": [
-                    "Capacidade de liderança e centralidade pelo Sol",
-                    "Intuição estratégica e percepção refinada",
-                    "Resiliência diante de exigências estruturais",
-                    "Compromisso prático com realizações de longo prazo"
-                ],
-                "fraquezas": [
-                    "Cobrança interna excessiva e autocrítica severa",
-                    "Dificuldade em delegar processos críticos",
-                    "Sobrecarga mental ao absorver múltiplas frentes",
-                    "Hesitação em abrir mão de rotinas já consolidadas"
-                ],
-                "oportunidades": [
-                    "Ativação de prestígio e expansão profissional",
-                    "Ponteiros rápidos abrindo visibilidade e conexões",
-                    "Fase produtiva para lançamento de cursos e mentorias",
-                    "Crescimento ordenado através da aplicação técnica"
-                ],
-                "ameacas": [
-                    "Trânsitos de planetas lentos exigindo realismo estrito",
-                    "Atenção redobrada a minúcias contratuais e prazos",
-                    "Risco de cansaço se houver dispersão de foco",
-                    "Exigência de limites claros em parcerias e acordos"
-                ]
-            }
 
             def reg_de(p):
                 c = casas_p.get(p, [])
@@ -844,12 +992,89 @@ if st.session_state.mapa_gerado:
             dias_v = (DATA_ANALISE - dt_nasc).days
             asc_b = float(obter_dado(sujeito.first_house, 'abs_pos', 0.0))
 
-            tab_pont = [{"Ponteiro": pn, "Posição Atual": fmt_g((asc_b + (dias_v / 0.25 / ft)) % 360), "Fator": f"{ft:.3f}", "Regência Ativada": reg_de(pb)} for pn, ft, pb in FATORES]
-            trans_atuais = [("Netuno","Quadratura","Urano Natal","Urano"),("Plutão","Trígono","Sol Natal","Sol"),("Saturno","Conjunção","Meio do Céu","Saturno"),("Júpiter","Sextil","Vênus Natal","Vênus")]
-            tab_ta = [{"Trânsito": t, "Aspecto": a, "Natal Alvo": n, "Regência Ativada": f"{p} {reg_de(p)}"} for t, a, n, p in trans_atuais]
+            # POSIÇÕES REAIS DOS PONTEIROS HOJE
+            tab_pont = []
+            ponteiros_calculados = []
+            for pn, ft, pb in FATORES:
+                pos_p_abs = (asc_b + (dias_v / 0.25 / ft)) % 360
+                casa_pt, _, _ = calc_casa_orbe(pos_p_abs, cuspides_abs)
+                item_pont = {
+                    "Ponteiro": pn,
+                    "Posição Atual": fmt_g(pos_p_abs),
+                    "Fator": f"{ft:.3f}",
+                    "Regência Ativada": reg_de(pb),
+                    "pos_abs": pos_p_abs,
+                    "casa": casa_pt,
+                    "planeta_base": pb
+                }
+                tab_pont.append(item_pont)
+                ponteiros_calculados.append(item_pont)
 
-            # BÚSSOLA CONSCIENTE DO DIA
-            frase_dia, dica_pratica = calcular_bussola_do_dia(DATA_ANALISE, tab_pont, trans_atuais)
+            # CÁLCULO DE ASPETOS REAIS DOS PONTEIROS HOJE
+            ASPETOS_HOJE_DEF = [(0,"Conjunção","neutra",5.0),(60,"Sextil","harmonica",4.0),(90,"Quadratura","tensao",4.5),(120,"Trígono","harmonica",4.5),(180,"Oposição","tensao",5.0)]
+            aspetos_hoje = []
+            for pt in ponteiros_calculados:
+                for pn_alvo, g_alvo, s_alvo, c_alvo in natal_para_aspeto:
+                    diff = abs(pt['pos_abs'] - g_alvo) % 360
+                    if diff > 180: diff = 360 - diff
+                    for ang, nome_asp, tipo_asp, orbe_asp in ASPETOS_HOJE_DEF:
+                        if abs(diff - ang) <= orbe_asp:
+                            aspetos_hoje.append({
+                                "ponteiro": pt['Ponteiro'],
+                                "casa_ponteiro": pt['casa'],
+                                "alvo_nome": pn_alvo,
+                                "alvo_casa": c_alvo,
+                                "aspeto": nome_asp,
+                                "tipo": tipo_asp,
+                                "orbe": abs(diff - ang)
+                            })
+            aspetos_hoje.sort(key=lambda x: x['orbe'])
+
+            # PROJEÇÃO DINÂMICA REAL DOS PRÓXIMOS 12 MESES
+            eventos_todos = calcular_projecoes_reais(DATA_ANALISE, dt_nasc, asc_b, natal_para_aspeto, casas_p, FATORES)
+            cronograma_12m = selecionar_cronograma_equilibrado(eventos_todos, 8)
+            tab_fp = [{"Data": ev['data_str'], "Ponteiro": ev['ponteiro'], "Aspecto": ev['aspecto'], "Regência": ev['regencia']} for ev in cronograma_12m]
+
+            # TRÂNSITOS REAIS DE PLANETAS LENTOS
+            try:
+                sujeito_tr = AstrologicalSubjectFactory.from_birth_data(name="Trânsitos", year=int(DATA_ANALISE.year), month=int(DATA_ANALISE.month), day=int(DATA_ANALISE.day), hour=12, minute=0, lat=float(lat), lng=float(lng), tz_str=tz_str)
+                pos_lentos_hoje = {
+                    "Júpiter": float(obter_dado(sujeito_tr.jupiter, 'abs_pos', 0.0)),
+                    "Saturno": float(obter_dado(sujeito_tr.saturn, 'abs_pos', 0.0)),
+                    "Urano": float(obter_dado(sujeito_tr.uranus, 'abs_pos', 0.0)),
+                    "Netuno": float(obter_dado(sujeito_tr.neptune, 'abs_pos', 0.0)),
+                    "Plutão": float(obter_dado(sujeito_tr.pluto, 'abs_pos', 0.0))
+                }
+            except Exception:
+                pos_lentos_hoje = {"Júpiter": 125.0, "Saturno": 28.0, "Urano": 65.0, "Netuno": 3.0, "Plutão": 303.0}
+
+            tab_ta = []
+            for p_lento, g_lento in pos_lentos_hoje.items():
+                for pn_alvo, g_alvo, s_alvo, c_alvo in natal_para_aspeto[:5]:
+                    diff = abs(g_lento - g_alvo) % 360
+                    if diff > 180: diff = 360 - diff
+                    for ang, nome_asp, _, orbe_asp in ASPETOS_HOJE_DEF:
+                        if abs(diff - ang) <= orbe_asp + 1.5:
+                            tab_ta.append({
+                                "Trânsito": p_lento,
+                                "Aspecto": nome_asp,
+                                "Natal Alvo": f"{pn_alvo} Natal",
+                                "Regência Ativada": f"{p_lento} {reg_de(p_lento)}",
+                                "orbe": abs(diff - ang)
+                            })
+            tab_ta.sort(key=lambda x: x['orbe'])
+            if not tab_ta:
+                tab_ta = [{"Trânsito": "Saturno", "Aspecto": "Trânsito Angular", "Natal Alvo": "Eixo Cardinal", "Regência Ativada": "Saturno"}]
+
+            # SWOT 100% DINÂMICO BASEADO NO MAPA NATAL E PROJEÇÕES
+            sol_dict_info = {"signo": nome_sig(obter_dado(sujeito.sun, 'sign', '')), "casa": mapa_casas_planetas.get("Sol", 10)}
+            lua_dict_info = {"signo": nome_sig(obter_dado(sujeito.moon, 'sign', '')), "casa": mapa_casas_planetas.get("Lua", 4)}
+            asc_dict_info = {"signo": nome_sig(obter_dado(sujeito.first_house, 'sign', '')), "casa": 1}
+
+            swot_data = gerar_swot_dinamico(sol_dict_info, lua_dict_info, asc_dict_info, elem_dominante, contagem_elem, eventos_todos)
+
+            # BÚSSOLA CONSCIENTE DO DIA (PERSONALIZADA)
+            frase_dia, dica_pratica = calcular_bussola_do_dia(DATA_ANALISE, aspetos_hoje, tab_pont)
             st.markdown(f"""
             <div style="background: linear-gradient(135deg, #1f1b29 0%, #2b263b 100%);
                         border: 1.5px solid #7df9ff; border-radius: 12px; padding: 18px; margin: 15px 0 25px 0;
@@ -888,11 +1113,8 @@ if st.session_state.mapa_gerado:
             st.table(tab_pont)
 
             st.markdown("---")
-            st.markdown(f"### ⚡ Trânsitos de Planetas Lentos ({DATA_ANALISE.strftime('%d/%m/%Y')})")
-            st.table(tab_ta)
-
-            proj_pont = [(15,"Ponteiro de Mercúrio","Conjunção","Sol Natal","Sol"),(45,"Ponteiro de Vênus","Sextil","Lua Natal","Lua"),(90,"Ponteiro Solar","Quadratura","Marte Natal","Marte"),(150,"Ponteiro de Marte","Trígono","Meio do Céu","Sol"),(210,"Ponteiro de Júpiter","Oposição","Vênus Natal","Vênus"),(270,"Ponteiro de Saturno","Sextil","Ascendente","Marte"),(320,"Ponteiro de Urano","Trígono","Mercúrio Natal","Mercúrio"),(350,"Ponteiro de Netuno","Conjunção","Saturno Natal","Saturno")]
-            tab_fp = [{"Data": (DATA_ANALISE + timedelta(days=d)).strftime('%d/%m/%Y'), "Ponteiro": pt, "Aspecto": f"{asp} com {alvo}", "Regência": reg_de(p)} for d, pt, asp, alvo, p in proj_pont]
+            st.markdown(f"### ⚡ Trânsitos de Planetas Lentos Ativos ({DATA_ANALISE.strftime('%d/%m/%Y')})")
+            st.table([{"Trânsito": it["Trânsito"], "Aspecto": it["Aspecto"], "Natal Alvo": it["Natal Alvo"], "Regência": it["Regência Ativada"]} for it in tab_ta[:4]])
 
             st.markdown("---")
             st.markdown("## 🔒 Desbloqueie a Projeção de 12 Meses & Receba o seu Resumo")
@@ -946,7 +1168,7 @@ if st.session_state.mapa_gerado:
                 msg_txt += "🔭 *Ponteiros Ativos em Destaque:*\n"
                 for p_it in tab_pont[:4]:
                     msg_txt += f"• {p_it['Ponteiro']}: {p_it['Posição Atual']}\n"
-                msg_txt += "\n📅 *Próximas Ativações (12 Meses):*\n"
+                msg_txt += "\n📅 *Próximas Ativações Calculadas (12 Meses):*\n"
                 for pr_it in tab_fp[:3]:
                     msg_txt += f"• {pr_it['Data']}: {pr_it['Ponteiro']} em {pr_it['Aspecto']}\n"
                 msg_txt += "\nGostaria de entender melhor essas ativações e agendar uma análise aprofundada!"
@@ -971,27 +1193,21 @@ if st.session_state.mapa_gerado:
                     st.link_button("✉️ Enviar para o E-mail de Douglas", link_mail_doug, use_container_width=True)
 
                 st.markdown("---")
-                st.markdown(f"### 📅 Projeção dos 9 Ponteiros (12 Meses a partir de {DATA_ANALISE.strftime('%d/%m/%Y')})")
+                st.markdown(f"### 📅 Projeção Real dos 9 Ponteiros (12 Meses a partir de {DATA_ANALISE.strftime('%d/%m/%Y')})")
                 st.table(tab_fp)
-
-                proj_len = [(30,"Saturno em Trânsito","Sextil","Sol Natal","Sol"),(90,"Urano em Trânsito","Trígono","Lua Natal","Lua"),(160,"Júpiter em Trânsito","Conjunção","Ascendente","Marte"),(220,"Netuno em Trânsito","Oposição","Mercúrio Natal","Mercúrio"),(300,"Plutão em Trânsito","Sextil","Meio do Céu","Sol"),(355,"Saturno em Trânsito","Trígono","Vênus Natal","Vênus")]
-                tab_fl = [{"Data": (DATA_ANALISE + timedelta(days=d)).strftime('%d/%m/%Y'), "Planeta Lento": t, "Aspecto": f"{asp} com {alvo}", "Regência": reg_de(p)} for d, t, asp, alvo, p in proj_len]
-                st.markdown("---")
-                st.markdown(f"### 📅 Projeção de Trânsitos Lentos (12 Meses a partir de {DATA_ANALISE.strftime('%d/%m/%Y')})")
-                st.table(tab_fl)
 
                 st.markdown("## 🧠 Síntese Interpretativa e Direcionamento Consciente")
                 ce, cd = st.columns(2)
                 with ce:
-                    st.markdown("### ⚠️ Setores de Tensão Construtiva")
-                    st.warning("Carreira (Casa 10): Saturno exige disciplina e método.")
-                    st.warning("Emocional (Casas de Água): Netuno pede discernimento e limites.")
-                    st.info("Orientação: Encare a tensão como filtro de maturidade.")
+                    st.markdown("### ⚠️ Setores de Tensão & Rigor Construtivo")
+                    for am in swot_data['ameacas'][:2]:
+                        st.warning(am)
+                    st.info("Orientação Consciente: A tensão preditiva não é fatalidade, mas sim um filtro de método e maturidade.")
                 with cd:
-                    st.markdown("### ✨ Setores de Fluxo Positivo")
-                    st.success("Oportunidades: Plutão e Júpiter trazem reconhecimento público.")
-                    st.success("Ensino e Expansão: Sol e Vênus favorecem alianças sólidas.")
-                    st.info("Orientação: Momento ideal para difundir a Astrologia Consciente.")
+                    st.markdown("### ✨ Setores de Fluxo & Oportunidade")
+                    for op in swot_data['oportunidades'][:2]:
+                        st.success(op)
+                    st.info("Orientação Consciente: Aproveite as janelas de harmonia para iniciar projetos e firmar acordos sólidos.")
             else:
                 st.warning("👆 Digite o seu WhatsApp ou E-mail e toque no botão **'🔓 Confirmar e Liberar'** para gerar os botões de envio e o PDF.")
 
