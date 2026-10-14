@@ -73,6 +73,26 @@ GLIFOS = dict(SIGNOS)
 REGENTES = {"Áries":["Marte"],"Touro":["Vênus"],"Gêmeos":["Mercúrio"],"Câncer":["Lua"],"Leão":["Sol"],"Virgem":["Mercúrio"],"Libra":["Vênus"],"Escorpião":["Marte","Plutão"],"Sagitário":["Júpiter"],"Capricórnio":["Saturno"],"Aquário":["Saturno","Urano"],"Peixes":["Júpiter","Netuno"]}
 REG_TXT = {"Áries":"Marte","Touro":"Vênus","Gêmeos":"Mercúrio","Câncer":"Lua","Leão":"Sol","Virgem":"Mercúrio","Libra":"Vênus","Escorpião":"Marte e Plutão","Sagitário":"Júpiter","Capricórnio":"Saturno","Aquário":"Saturno e Urano","Peixes":"Júpiter e Netuno"}
 
+# ==================== CONVERSÃO SEXAGESIMAL (GRAUS E MINUTOS 1° = 60') ====================
+def dec_para_graus_minutos(val):
+    val = float(val) % 30.0
+    graus = int(val)
+    minutos = int(round((val - graus) * 60))
+    if minutos == 60:
+        graus += 1
+        minutos = 0
+    if graus == 30:
+        graus = 0
+    return graus, minutos
+
+def fmt_g(g):
+    g = float(g) % 360.0
+    idx = int(g // 30)
+    sob = g % 30.0
+    graus, minutos = dec_para_graus_minutos(sob)
+    n, gl = SIGNOS[idx]
+    return f"{graus}° {minutos:02d}' {gl} {n}"
+
 ORBES_CASAS = {
     1: 10.0, 4: 10.0, 7: 10.0, 10: 10.0,
     2: 5.0,  5: 5.0,  8: 5.0,  11: 5.0,
@@ -244,7 +264,7 @@ def obter_geolocalizacao_segura(cidade_str, sigla_uf=""):
             return float(lat), float(lng), tz
 
     try:
-        geo = Nominatim(user_agent="astrologia_consciente_douglas_v3", timeout=12)
+        geo = Nominatim(user_agent="astrologia_consciente_douglas_v4", timeout=12)
         loc = geo.geocode(cidade_str)
         if loc:
             tf = TimezoneFinder()
@@ -270,12 +290,6 @@ def nome_sig(r):
 def fmt_sig(r):
     n = nome_sig(r)
     return f"{GLIFOS.get(n,'✨')} {n}"
-
-def fmt_g(g):
-    g = g % 360
-    idx, sob = int(g // 30), g % 30
-    n, gl = SIGNOS[idx]
-    return f"{sob:.2f}° {gl} {n}"
 
 def calc_casa_orbe(p_abs, cuspides_dict):
     p_abs = p_abs % 360
@@ -644,8 +658,9 @@ def gerar_mandala_astrologica_png(planetas_pos, cuspides_pos, asc_grau):
         p_rad = np.radians(p_grau) + offset_rad
         ax.plot(p_rad, 0.85, 'o', color='#0d47a1', markersize=5, zorder=4)
         deg_in_sign = p_grau % 30
-        label = f"{p_glifo}\n{deg_in_sign:.0f}°"
-        ax.text(p_rad, 0.98, label, ha='center', va='center', fontsize=8, color='#102a43', fontproperties=font_prop, zorder=5)
+        gp, mp = dec_para_graus_minutos(deg_in_sign)
+        label = f"{p_glifo}\n{gp}°{mp:02d}'"
+        ax.text(p_rad, 0.98, label, ha='center', va='center', fontsize=7.5, color='#102a43', fontproperties=font_prop, zorder=5)
 
     ax.set_yticklabels([])
     ax.set_xticklabels([])
@@ -658,7 +673,7 @@ def gerar_mandala_astrologica_png(planetas_pos, cuspides_pos, asc_grau):
     plt.close(fig)
     return buf.getvalue()
 
-# ==================== GERAÇÃO DO PDF ADAPTATIVO (SEM CORTES) ====================
+# ==================== GERAÇÃO DO PDF ADAPTATIVO ====================
 def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_data, tab_pont_raw, tab_proj_raw, planetas_pos, cuspides_pos, asc_grau):
     if not REPORTLAB_DISPONIVEL: return None
     buf = BytesIO()
@@ -737,7 +752,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFillColor(HexColor('#2b263b'))
     c.drawString(50, y_tr - 18, seguro_texto(f"Setor Focal: {pot_texto['titulo']}"))
 
-    # Texto de vocação renderizado 100% completo
     linhas_pot = textwrap.wrap(pot_texto['descricao'], width=46)
     y_pt = y_tr - 30
     for lp in linhas_pot:
@@ -756,7 +770,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         c.setFont(FONTE_BOLD_NOME, 8.5)
         c.drawCentredString(442.5, y_sec1_box_top - (h_sec1 / 2), seguro_texto("Mandala Astrológica Natal"))
 
-    # Seção 2: SWOT Natal (Cards Dinâmicos com Altura Calculada)
+    # Seção 2: SWOT Natal (Cards Dinâmicos)
     y_sec2_title = y_sec1_box_top - h_sec1 - 16
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
@@ -765,7 +779,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.line(40, y_sec2_title - 4, w_page - 40, y_sec2_title - 4)
 
     y_sec2_top = y_sec2_title - 14
-    w_card = (w_page - 80 - 15) / 2 # 250 pt cada coluna
+    w_card = (w_page - 80 - 15) / 2
 
     h_f_req = calcular_altura_necessaria(swot_data['forcas'], char_width=44, line_spacing=10.0, item_spacing=5.0)
     h_fr_req = calcular_altura_necessaria(swot_data['fraquezas'], char_width=44, line_spacing=10.0, item_spacing=5.0)
@@ -785,7 +799,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         char_width=44, font_size=7.8, line_spacing=10.0, item_spacing=5.0, force_height=h_swot1
     )
 
-    # Seção 3: Ponteiros em 2 Colunas Limpas (Economiza Espaço e Evita Quebras)
+    # Seção 3: Ponteiros em 2 Colunas Limpas
     y_sec3_title = y_bot_sec2 - 15
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
@@ -811,7 +825,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         c.drawString(318, y_p_right, seguro_texto(f"{it['Ponteiro']}: {it['Pos']} | {it['Reg']}"))
         y_p_right -= 12.5
 
-    # Rodapé Página 1
     c.setStrokeColor(cor_borda)
     c.line(40, 36, w_page - 40, 36)
     c.setFont(FONTE_UNICODE_NOME, 7.5)
@@ -830,7 +843,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFont(FONTE_BOLD_NOME, 10.5)
     c.drawString(40, h_page - 30, seguro_texto("CRONOGRAMA PREDITIVO: OPORTUNIDADES, AMEAÇAS E DIRECIONAMENTO"))
 
-    # Seção 4: SWOT Preditivo (Cards Dinâmicos sem Cortes)
+    # Seção 4: SWOT Preditivo
     y_sec4_title = h_page - 72
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
@@ -858,7 +871,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         char_width=44, font_size=7.8, line_spacing=10.0, item_spacing=5.0, force_height=h_swot2
     )
 
-    # Seção 5: Cronograma dos 9 Ponteiros (Dinâmico e Completo)
+    # Seção 5: Cronograma dos 9 Ponteiros
     y_sec5_title = y_bot_sec4 - 16
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
@@ -902,7 +915,6 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     c.setFont(FONTE_UNICODE_NOME, 8)
     c.drawString(55, y_card + 18, seguro_texto("Instagram: @astrolodoug  |  WhatsApp: +55 (11) 97711-7024  |  YouTube: @astrolodoug"))
 
-    # Rodapé Página 2
     c.setStrokeColor(cor_borda)
     c.line(40, 36, w_page - 40, 36)
     c.setFont(FONTE_UNICODE_NOME, 7.5)
@@ -993,7 +1005,8 @@ if st.session_state.mapa_gerado:
                 for r in REGENTES.get(sn, []):
                     if r in casas_p: casas_p[r].append(f"Casa {num}")
                 pos_c = float(obter_dado(oc, 'position', 0.0))
-                tab_c.append({"Casa Astrológica": nc, "Cúspide": f"{pos_c:.2f}° {fmt_sig(sn)}", "Regentes": REG_TXT.get(sn, "Desconhecido")})
+                g_c, m_c = dec_para_graus_minutos(pos_c)
+                tab_c.append({"Casa Astrológica": nc, "Cúspide": f"{g_c}° {m_c:02d}' {fmt_sig(sn)}", "Regentes": REG_TXT.get(sn, "Desconhecido")})
 
             planetas_dados = [("Sol", sujeito.sun, "☉"), ("Lua", sujeito.moon, "☽"), ("Mercúrio", sujeito.mercury, "☿"), ("Vênus", sujeito.venus, "♀"), ("Marte", sujeito.mars, "♂"), ("Júpiter", sujeito.jupiter, "♃"), ("Saturno", sujeito.saturn, "♄"), ("Urano", sujeito.uranus, "♅"), ("Netuno", sujeito.neptune, "♆"), ("Plutão", sujeito.pluto, "♇")]
 
@@ -1016,9 +1029,10 @@ if st.session_state.mapa_gerado:
 
                 rotulo_casa = f"{num_casa}ª Casa (orbe de {int(orbe_val)}°)" if por_orbe else f"{num_casa}ª Casa"
                 pos_p = float(obter_dado(po, 'position', 0.0))
+                g_p, m_p = dec_para_graus_minutos(pos_p)
                 tab_pl.append({
                     "Planeta": pn,
-                    "Posição": f"{pos_p:.2f}° {fmt_sig(obter_dado(po, 'sign', ''))}",
+                    "Posição": f"{g_p}° {m_p:02d}' {fmt_sig(obter_dado(po, 'sign', ''))}",
                     "Casa Natal (com Orbe)": rotulo_casa,
                     "Regente": REG_TXT.get(s_nome, "Desconhecido")
                 })
@@ -1186,10 +1200,14 @@ if st.session_state.mapa_gerado:
                 lua_pos = float(obter_dado(sujeito.moon, 'position', 0.0))
                 asc_pos = float(obter_dado(sujeito.first_house, 'position', 0.0))
 
+                g_sol, m_sol = dec_para_graus_minutos(sol_pos)
+                g_lua, m_lua = dec_para_graus_minutos(lua_pos)
+                g_asc, m_asc = dec_para_graus_minutos(asc_pos)
+
                 triade_resumo = {
-                    "sol": f"{sol_pos:.2f}° {GLIFOS.get(sol_sn, '')} {sol_sn} (Casa {mapa_casas_planetas.get('Sol',1)})",
-                    "lua": f"{lua_pos:.2f}° {GLIFOS.get(lua_sn, '')} {lua_sn} (Casa {mapa_casas_planetas.get('Lua',1)})",
-                    "asc": f"{asc_pos:.2f}° {GLIFOS.get(asc_sn, '')} {asc_sn} (1ª Casa)"
+                    "sol": f"{g_sol}° {m_sol:02d}' {GLIFOS.get(sol_sn, '')} {sol_sn} (Casa {mapa_casas_planetas.get('Sol',1)})",
+                    "lua": f"{g_lua}° {m_lua:02d}' {GLIFOS.get(lua_sn, '')} {lua_sn} (Casa {mapa_casas_planetas.get('Lua',1)})",
+                    "asc": f"{g_asc}° {m_asc:02d}' {GLIFOS.get(asc_sn, '')} {asc_sn} (1ª Casa)"
                 }
 
                 pdf_bytes = fabricar_pdf_estilizado(
