@@ -94,14 +94,13 @@ POTENCIAL_CASAS = {
     12: "Sensibilidade intuitiva refinada, compreensão psíquica e talento para atuar nos bastidores."
 }
 
-# ==================== BANCO ARQUETÍPICO PARA ANÁLISE DINÂMICA ====================
 FORCAS_SIGNOS = {
     "Áries": "Pioneirismo, assertividade nas decisões e coragem para abrir novos caminhos.",
     "Touro": "Capacidade de sustentação material, persistência e fidelidade a valores práticos.",
     "Gêmeos": "Versatilidade mental, rapidez de articulação lógica e talento para conectar saberes.",
     "Câncer": "Faro intuitivo aguçado, empatia protetora e poder de mobilização emocional genuína.",
     "Leão": "Magnetismo pessoal radiante, generosidade autoral e autoridade natural na liderança.",
-    "Virgem": "Discernimento analítico cirúrgico, domínio técnico impecável e constante busca por excelência.",
+    "Virgem": "Discernimento analítico cirúrgico, domínio técnico impecável e busca por excelência.",
     "Libra": "Senso estético refinado, habilidade diplomática nata e visão equilibrada em negociações.",
     "Escorpião": "Percepção psicológica profunda, poder regenerativo perante crises e foco inabalável.",
     "Sagitário": "Visão ampla de longo prazo, entusiasmo expansivo e habilidade natural para ensinar e inspirar.",
@@ -365,6 +364,54 @@ def desenhar_marcador(c, x, y, cor=HexColor('#0d47a1'), raio=2.5):
     p.close()
     c.drawPath(p, fill=1, stroke=0)
 
+# ==================== RENDERIZADOR DINÂMICO DE CARDS SEM CORTES ====================
+def calcular_altura_necessaria(items, char_width=44, line_spacing=10.0, item_spacing=5.0):
+    total_linhas = 0
+    for it in items:
+        linhas = textwrap.wrap(it, width=char_width)
+        total_linhas += max(len(linhas), 1)
+    return 10.0 + 18.0 + (total_linhas * line_spacing) + (len(items) * item_spacing) + 8.0
+
+def desenhar_card_dinamico(c, x, y_top, width, title, items, font_name, font_bold_name,
+                           bg_color, border_color, title_color, bullet_color,
+                           char_width=44, font_size=7.8, line_spacing=10.0, item_spacing=5.0, force_height=None):
+    wrapped_items = []
+    total_text_lines = 0
+    for it in items:
+        lines = textwrap.wrap(it, width=char_width)
+        if not lines: lines = [""]
+        wrapped_items.append(lines)
+        total_text_lines += len(lines)
+
+    title_height = 18.0
+    padding_top = 10.0
+    padding_bottom = 8.0
+
+    calc_h = padding_top + title_height + (total_text_lines * line_spacing) + (len(items) * item_spacing) + padding_bottom
+    card_height = max(calc_h, force_height) if force_height else calc_h
+    y_bottom = y_top - card_height
+
+    c.setFillColor(bg_color)
+    c.setStrokeColor(border_color)
+    c.setLineWidth(1)
+    c.roundRect(x, y_bottom, width, card_height, 6, fill=1, stroke=1)
+
+    c.setFillColor(title_color)
+    c.setFont(font_bold_name, 9)
+    c.drawString(x + 12, y_top - padding_top - 9, seguro_texto(title))
+
+    cur_y = y_top - padding_top - title_height
+    for lines in wrapped_items:
+        desenhar_marcador(c, x + 12, cur_y + 3, bullet_color, raio=2.2)
+        c.setFont(font_name, font_size)
+        c.setFillColor(HexColor('#1f1b29'))
+        for line in lines:
+            c.drawString(x + 20, cur_y, seguro_texto(line))
+            cur_y -= line_spacing
+        cur_y -= item_spacing
+
+    return card_height, y_bottom
+
 # ==================== CÁLCULO PREDITIVO REAL (12 MESES) ====================
 def calcular_projecoes_reais(dt_analise, dt_nasc, asc_b, planetas_natal, casas_p, FATORES):
     dias_base = (dt_analise - dt_nasc).days
@@ -611,6 +658,7 @@ def gerar_mandala_astrologica_png(planetas_pos, cuspides_pos, asc_grau):
     plt.close(fig)
     return buf.getvalue()
 
+# ==================== GERAÇÃO DO PDF ADAPTATIVO (SEM CORTES) ====================
 def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_data, tab_pont_raw, tab_proj_raw, planetas_pos, cuspides_pos, asc_grau):
     if not REPORTLAB_DISPONIVEL: return None
     buf = BytesIO()
@@ -626,40 +674,47 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
 
     # ========================== PÁGINA 1 ==========================
     c.setFillColor(cor_topo)
-    c.rect(0, h_page - 80, w_page, 80, fill=1, stroke=0)
+    c.rect(0, h_page - 75, w_page, 75, fill=1, stroke=0)
     c.setFillColor(cor_azul_escuro)
-    c.rect(0, h_page - 83, w_page, 3, fill=1, stroke=0)
+    c.rect(0, h_page - 78, w_page, 3, fill=1, stroke=0)
 
     c.setFillColor(HexColor('#ffffff'))
     c.setFont(FONTE_BOLD_NOME, 15)
-    c.drawString(40, h_page - 36, seguro_texto("ASTROLOGIA CONSCIENTE"))
+    c.drawString(40, h_page - 34, seguro_texto("ASTROLOGIA CONSCIENTE"))
     c.setFont(FONTE_UNICODE_NOME, 9.5)
-    c.drawString(40, h_page - 52, seguro_texto("Relatório Executivo: Matriz Natal, Mandala & A Dança dos Ponteiros"))
+    c.drawString(40, h_page - 49, seguro_texto("Relatório Executivo: Matriz Natal, Mandala & A Dança dos Ponteiros"))
     c.setFont(FONTE_OBLIQUE_NOME, 8)
-    c.drawString(40, h_page - 66, seguro_texto("Pesquisa e Metodologia: Douglas Rosa (@astrolodoug)"))
+    c.drawString(40, h_page - 63, seguro_texto("Pesquisa e Metodologia: Douglas Rosa (@astrolodoug)"))
 
+    # Card Consulente
     c.setFillColor(cor_fundo_card)
     c.setStrokeColor(cor_borda)
-    c.roundRect(40, h_page - 135, w_page - 80, 45, 5, fill=1, stroke=1)
+    c.roundRect(40, h_page - 130, w_page - 80, 44, 5, fill=1, stroke=1)
     c.setFillColor(cor_topo)
     c.setFont(FONTE_BOLD_NOME, 9.5)
-    c.drawString(50, h_page - 105, seguro_texto(f"Consulente: {nome_c} | Local: {cid_c}"))
+    c.drawString(50, h_page - 102, seguro_texto(f"Consulente: {nome_c} | Local: {cid_c}"))
     c.setFont(FONTE_UNICODE_NOME, 8.5)
-    c.drawString(50, h_page - 120, seguro_texto(f"Data Base da Análise: {dt_ref} | Método: APRS e Trânsitos Ativos"))
+    c.drawString(50, h_page - 117, seguro_texto(f"Data Base da Análise: {dt_ref} | Método: APRS e Trânsitos Ativos"))
 
+    # Seção 1: Síntese e Mandala
+    y_sec1_title = h_page - 146
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
-    c.drawString(40, h_page - 152, seguro_texto("1. Síntese da Personalidade & Mandala Astrológica"))
+    c.drawString(40, y_sec1_title, seguro_texto("1. Síntese da Personalidade & Mandala Astrológica"))
     c.setStrokeColor(cor_azul_escuro)
     c.setLineWidth(1)
-    c.line(40, h_page - 156, w_page - 40, h_page - 156)
+    c.line(40, y_sec1_title - 4, w_page - 40, y_sec1_title - 4)
 
+    y_sec1_box_top = y_sec1_title - 14
+    h_sec1 = 205.0
+
+    # Box Esquerda: Tríade com Glifos e Vocação Completa (sem cortes)
     c.setFillColor(cor_fundo_card)
     c.setStrokeColor(cor_borda)
-    c.roundRect(40, h_page - 370, 275, 205, 5, fill=1, stroke=1)
+    c.roundRect(40, y_sec1_box_top - h_sec1, 275, h_sec1, 5, fill=1, stroke=1)
     c.setFillColor(cor_azul_escuro)
     c.setFont(FONTE_BOLD_NOME, 9)
-    c.drawString(50, h_page - 175, seguro_texto("Eixo de Identidade & Temperamento:"))
+    c.drawString(50, y_sec1_box_top - 18, seguro_texto("Eixo de Identidade & Temperamento:"))
 
     itens_triade = [
         f"Sol Natal: {triade_info['sol']}",
@@ -667,201 +722,193 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
         f"Ascendente: {triade_info['asc']}",
         f"Elemento Predominante: {swot_data['elemento_dominante']}"
     ]
-    y_tr = h_page - 195
+    y_tr = y_sec1_box_top - 35
     for it in itens_triade:
         desenhar_marcador(c, 52, y_tr + 3, cor_azul_escuro)
         c.setFont(FONTE_UNICODE_NOME, 8.5)
         c.setFillColor(HexColor('#1f1b29'))
         c.drawString(60, y_tr, seguro_texto(it))
-        y_tr -= 16
+        y_tr -= 15
 
     c.setFillColor(cor_azul_escuro)
     c.setFont(FONTE_BOLD_NOME, 8.5)
-    c.drawString(50, h_page - 275, seguro_texto("Área de Maior Vocação & Potencial:"))
+    c.drawString(50, y_tr - 5, seguro_texto("Área de Maior Vocação & Potencial:"))
     c.setFont(FONTE_OBLIQUE_NOME, 8)
     c.setFillColor(HexColor('#2b263b'))
-    c.drawString(50, h_page - 290, seguro_texto(f"Setor Focal: {pot_texto['titulo']}"))
-    linhas_pot = textwrap.wrap(pot_texto['descricao'], width=48)
-    y_pt = h_page - 304
-    for lp in linhas_pot[:2]:
-        c.drawString(50, y_pt, seguro_texto(lp))
-        y_pt -= 12
+    c.drawString(50, y_tr - 18, seguro_texto(f"Setor Focal: {pot_texto['titulo']}"))
 
+    # Texto de vocação renderizado 100% completo
+    linhas_pot = textwrap.wrap(pot_texto['descricao'], width=46)
+    y_pt = y_tr - 30
+    for lp in linhas_pot:
+        c.drawString(50, y_pt, seguro_texto(lp))
+        y_pt -= 10.5
+
+    # Box Direita com Mandala Oficial Sincronizada
     c.setFillColor(HexColor('#ffffff'))
     c.setStrokeColor(cor_borda)
-    c.roundRect(330, h_page - 370, 225, 205, 5, fill=1, stroke=1)
-
+    c.roundRect(330, y_sec1_box_top - h_sec1, 225, h_sec1, 5, fill=1, stroke=1)
     try:
         png_mandala = gerar_mandala_astrologica_png(planetas_pos, cuspides_pos, asc_grau)
-        c.drawImage(ImageReader(BytesIO(png_mandala)), 333, h_page - 367, width=219, height=200, mask='auto')
+        c.drawImage(ImageReader(BytesIO(png_mandala)), 333, y_sec1_box_top - h_sec1 + 3, width=219, height=199, mask='auto')
     except Exception:
         c.setFillColor(cor_azul_escuro)
         c.setFont(FONTE_BOLD_NOME, 8.5)
-        c.drawCentredString(442.5, h_page - 270, seguro_texto("Mandala Astrológica Natal"))
+        c.drawCentredString(442.5, y_sec1_box_top - (h_sec1 / 2), seguro_texto("Mandala Astrológica Natal"))
 
+    # Seção 2: SWOT Natal (Cards Dinâmicos com Altura Calculada)
+    y_sec2_title = y_sec1_box_top - h_sec1 - 16
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
-    c.drawString(40, h_page - 390, seguro_texto("2. Análise Comportamental: Forças e Fraquezas Natais"))
+    c.drawString(40, y_sec2_title, seguro_texto("2. Análise Comportamental: Forças e Fraquezas Natais"))
     c.setStrokeColor(cor_azul_escuro)
-    c.line(40, h_page - 394, w_page - 40, h_page - 394)
+    c.line(40, y_sec2_title - 4, w_page - 40, y_sec2_title - 4)
 
-    w_box = (w_page - 90) / 2
-    c.setFillColor(HexColor('#f1f8e9'))
-    c.setStrokeColor(cor_verde)
-    c.roundRect(40, h_page - 520, w_box, 118, 5, fill=1, stroke=1)
-    c.setFillColor(cor_verde)
-    c.setFont(FONTE_BOLD_NOME, 9)
-    c.drawString(50, h_page - 410, seguro_texto("FORÇAS (Potenciais Inatos):"))
-    y_f = h_page - 430
-    for item in swot_data['forcas']:
-        desenhar_marcador(c, 52, y_f + 3, cor_verde)
-        c.setFont(FONTE_UNICODE_NOME, 8)
-        c.setFillColor(HexColor('#1f1b29'))
-        linhas_f = textwrap.wrap(item, width=42)
-        c.drawString(60, y_f, seguro_texto(linhas_f[0]))
-        if len(linhas_f) > 1:
-            y_f -= 10
-            c.drawString(60, y_f, seguro_texto(linhas_f[1]))
-        y_f -= 14
+    y_sec2_top = y_sec2_title - 14
+    w_card = (w_page - 80 - 15) / 2 # 250 pt cada coluna
 
-    c.setFillColor(HexColor('#ffebee'))
-    c.setStrokeColor(cor_alerta)
-    c.roundRect(45 + w_box, h_page - 520, w_box, 118, 5, fill=1, stroke=1)
-    c.setFillColor(cor_alerta)
-    c.setFont(FONTE_BOLD_NOME, 9)
-    c.drawString(55 + w_box, h_page - 410, seguro_texto("FRAQUEZAS (Zonas de Atenção):"))
-    y_fr = h_page - 430
-    for item in swot_data['fraquezas']:
-        desenhar_marcador(c, 57 + w_box, y_fr + 3, cor_alerta)
-        c.setFont(FONTE_UNICODE_NOME, 8)
-        c.setFillColor(HexColor('#1f1b29'))
-        linhas_fr = textwrap.wrap(item, width=42)
-        c.drawString(65 + w_box, y_fr, seguro_texto(linhas_fr[0]))
-        if len(linhas_fr) > 1:
-            y_fr -= 10
-            c.drawString(65 + w_box, y_fr, seguro_texto(linhas_fr[1]))
-        y_fr -= 14
+    h_f_req = calcular_altura_necessaria(swot_data['forcas'], char_width=44, line_spacing=10.0, item_spacing=5.0)
+    h_fr_req = calcular_altura_necessaria(swot_data['fraquezas'], char_width=44, line_spacing=10.0, item_spacing=5.0)
+    h_swot1 = max(h_f_req, h_fr_req)
 
+    _, y_bot_sec2 = desenhar_card_dinamico(
+        c, 40, y_sec2_top, w_card, "FORÇAS (Potenciais Inatos):", swot_data['forcas'],
+        FONTE_UNICODE_NOME, FONTE_BOLD_NOME,
+        HexColor('#f1f8e9'), HexColor('#1b5e20'), HexColor('#1b5e20'), HexColor('#1b5e20'),
+        char_width=44, font_size=7.8, line_spacing=10.0, item_spacing=5.0, force_height=h_swot1
+    )
+
+    desenhar_card_dinamico(
+        c, 40 + w_card + 15, y_sec2_top, w_card, "FRAQUEZAS (Zonas de Atenção):", swot_data['fraquezas'],
+        FONTE_UNICODE_NOME, FONTE_BOLD_NOME,
+        HexColor('#ffebee'), HexColor('#b71c1c'), HexColor('#b71c1c'), HexColor('#b71c1c'),
+        char_width=44, font_size=7.8, line_spacing=10.0, item_spacing=5.0, force_height=h_swot1
+    )
+
+    # Seção 3: Ponteiros em 2 Colunas Limpas (Economiza Espaço e Evita Quebras)
+    y_sec3_title = y_bot_sec2 - 15
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
-    c.drawString(40, h_page - 542, seguro_texto("3. Posicionamento Atual dos 9 Ponteiros"))
+    c.drawString(40, y_sec3_title, seguro_texto("3. Posicionamento Atual dos 9 Ponteiros"))
     c.setStrokeColor(cor_azul_escuro)
-    c.line(40, h_page - 546, w_page - 40, h_page - 546)
+    c.line(40, y_sec3_title - 4, w_page - 40, y_sec3_title - 4)
 
-    y_p = h_page - 564
-    for it in tab_pont_raw[:9]:
-        desenhar_marcador(c, 47, y_p + 3, cor_azul_escuro)
-        c.setFont(FONTE_UNICODE_NOME, 8.5)
+    y_p_left = y_sec3_title - 16
+    col1_items = tab_pont_raw[:5]
+    for it in col1_items:
+        desenhar_marcador(c, 44, y_p_left + 3, cor_azul_escuro, raio=2.0)
+        c.setFont(FONTE_UNICODE_NOME, 7.8)
         c.setFillColor(HexColor('#1f1b29'))
-        c.drawString(55, y_p, seguro_texto(f"{it['Ponteiro']}: {it['Pos']}  |  {it['Reg']}"))
-        y_p -= 15
+        c.drawString(52, y_p_left, seguro_texto(f"{it['Ponteiro']}: {it['Pos']} | {it['Reg']}"))
+        y_p_left -= 12.5
 
+    y_p_right = y_sec3_title - 16
+    col2_items = tab_pont_raw[5:9]
+    for it in col2_items:
+        desenhar_marcador(c, 310, y_p_right + 3, cor_azul_escuro, raio=2.0)
+        c.setFont(FONTE_UNICODE_NOME, 7.8)
+        c.setFillColor(HexColor('#1f1b29'))
+        c.drawString(318, y_p_right, seguro_texto(f"{it['Ponteiro']}: {it['Pos']} | {it['Reg']}"))
+        y_p_right -= 12.5
+
+    # Rodapé Página 1
     c.setStrokeColor(cor_borda)
-    c.line(40, 40, w_page - 40, 40)
+    c.line(40, 36, w_page - 40, 36)
     c.setFont(FONTE_UNICODE_NOME, 7.5)
     c.setFillColor(HexColor('#555555'))
-    c.drawString(40, 28, seguro_texto("Astrologia Consciente | Douglas Rosa (@astrolodoug) - WhatsApp: (11) 97711-7024"))
-    c.drawRightString(w_page - 40, 28, seguro_texto("Página 1 de 2"))
+    c.drawString(40, 24, seguro_texto("Astrologia Consciente | Douglas Rosa (@astrolodoug) - WhatsApp: (11) 97711-7024"))
+    c.drawRightString(w_page - 40, 24, seguro_texto("Página 1 de 2"))
 
     c.showPage()
 
     # ========================== PÁGINA 2 ==========================
     c.setFillColor(cor_topo)
-    c.rect(0, h_page - 50, w_page, 50, fill=1, stroke=0)
+    c.rect(0, h_page - 48, w_page, 48, fill=1, stroke=0)
     c.setFillColor(cor_azul_escuro)
-    c.rect(0, h_page - 53, w_page, 3, fill=1, stroke=0)
+    c.rect(0, h_page - 51, w_page, 3, fill=1, stroke=0)
     c.setFillColor(HexColor('#ffffff'))
     c.setFont(FONTE_BOLD_NOME, 10.5)
-    c.drawString(40, h_page - 32, seguro_texto("CRONOGRAMA PREDITIVO: OPORTUNIDADES, AMEAÇAS E DIRECIONAMENTO"))
+    c.drawString(40, h_page - 30, seguro_texto("CRONOGRAMA PREDITIVO: OPORTUNIDADES, AMEAÇAS E DIRECIONAMENTO"))
 
+    # Seção 4: SWOT Preditivo (Cards Dinâmicos sem Cortes)
+    y_sec4_title = h_page - 72
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
-    c.drawString(40, h_page - 75, seguro_texto("4. Matriz Preditiva: Oportunidades & Ameaças dos Próximos 12 Meses"))
+    c.drawString(40, y_sec4_title, seguro_texto("4. Matriz Preditiva: Oportunidades & Ameaças dos Próximos 12 Meses"))
     c.setStrokeColor(cor_azul_escuro)
-    c.line(40, h_page - 79, w_page - 40, h_page - 79)
+    c.line(40, y_sec4_title - 4, w_page - 40, y_sec4_title - 4)
 
-    c.setFillColor(HexColor('#f1f8e9'))
-    c.setStrokeColor(cor_verde)
-    c.roundRect(40, h_page - 215, w_box, 125, 5, fill=1, stroke=1)
-    c.setFillColor(cor_verde)
-    c.setFont(FONTE_BOLD_NOME, 9)
-    c.drawString(50, h_page - 98, seguro_texto("OPORTUNIDADES (Janelas de Expansão):"))
-    y_op = h_page - 116
-    for item in swot_data['oportunidades']:
-        desenhar_marcador(c, 52, y_op + 3, cor_verde)
-        c.setFont(FONTE_UNICODE_NOME, 8)
-        c.setFillColor(HexColor('#1f1b29'))
-        linhas_op = textwrap.wrap(item, width=42)
-        c.drawString(60, y_op, seguro_texto(linhas_op[0]))
-        if len(linhas_op) > 1:
-            y_op -= 10
-            c.drawString(60, y_op, seguro_texto(linhas_op[1]))
-        y_op -= 14
+    y_sec4_top = y_sec4_title - 14
 
-    c.setFillColor(HexColor('#fff8e1'))
-    c.setStrokeColor(HexColor('#f57c00'))
-    c.roundRect(45 + w_box, h_page - 215, w_box, 125, 5, fill=1, stroke=1)
-    c.setFillColor(HexColor('#e65100'))
-    c.setFont(FONTE_BOLD_NOME, 9)
-    c.drawString(55 + w_box, h_page - 98, seguro_texto("AMEAÇAS (Gatilhos de Rigor & Atenção):"))
-    y_am = h_page - 116
-    for item in swot_data['ameacas']:
-        desenhar_marcador(c, 57 + w_box, y_am + 3, HexColor('#e65100'))
-        c.setFont(FONTE_UNICODE_NOME, 8)
-        c.setFillColor(HexColor('#1f1b29'))
-        linhas_am = textwrap.wrap(item, width=42)
-        c.drawString(65 + w_box, y_am, seguro_texto(linhas_am[0]))
-        if len(linhas_am) > 1:
-            y_am -= 10
-            c.drawString(65 + w_box, y_am, seguro_texto(linhas_am[1]))
-        y_am -= 14
+    h_op_req = calcular_altura_necessaria(swot_data['oportunidades'], char_width=44, line_spacing=10.0, item_spacing=5.0)
+    h_am_req = calcular_altura_necessaria(swot_data['ameacas'], char_width=44, line_spacing=10.0, item_spacing=5.0)
+    h_swot2 = max(h_op_req, h_am_req)
 
+    _, y_bot_sec4 = desenhar_card_dinamico(
+        c, 40, y_sec4_top, w_card, "OPORTUNIDADES (Janelas de Expansão):", swot_data['oportunidades'],
+        FONTE_UNICODE_NOME, FONTE_BOLD_NOME,
+        HexColor('#f1f8e9'), HexColor('#1b5e20'), HexColor('#1b5e20'), HexColor('#1b5e20'),
+        char_width=44, font_size=7.8, line_spacing=10.0, item_spacing=5.0, force_height=h_swot2
+    )
+
+    desenhar_card_dinamico(
+        c, 40 + w_card + 15, y_sec4_top, w_card, "AMEAÇAS (Gatilhos de Rigor & Atenção):", swot_data['ameacas'],
+        FONTE_UNICODE_NOME, FONTE_BOLD_NOME,
+        HexColor('#fff8e1'), HexColor('#f57c00'), HexColor('#e65100'), HexColor('#e65100'),
+        char_width=44, font_size=7.8, line_spacing=10.0, item_spacing=5.0, force_height=h_swot2
+    )
+
+    # Seção 5: Cronograma dos 9 Ponteiros (Dinâmico e Completo)
+    y_sec5_title = y_bot_sec4 - 16
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
-    c.drawString(40, h_page - 238, seguro_texto("5. Cronograma dos 9 Ponteiros & Gatilhos no Tempo (12 Meses)"))
+    c.drawString(40, y_sec5_title, seguro_texto("5. Cronograma dos 9 Ponteiros & Gatilhos no Tempo (12 Meses)"))
     c.setStrokeColor(cor_azul_escuro)
-    c.line(40, h_page - 242, w_page - 40, h_page - 242)
+    c.line(40, y_sec5_title - 4, w_page - 40, y_sec5_title - 4)
 
-    y_pr = h_page - 260
+    y_pr = y_sec5_title - 16
     for p in tab_proj_raw[:7]:
-        desenhar_marcador(c, 47, y_pr + 3, cor_azul_escuro)
+        desenhar_marcador(c, 44, y_pr + 3, cor_azul_escuro, raio=2.0)
         c.setFont(FONTE_UNICODE_NOME, 8)
         c.setFillColor(HexColor('#1f1b29'))
-        c.drawString(55, y_pr, seguro_texto(f"{p['Data']}: {p['Ponteiro']} em {p['Aspecto']} ({p['Regência']})"))
-        y_pr -= 15
+        c.drawString(54, y_pr, seguro_texto(f"{p['Data']}: {p['Ponteiro']} em {p['Aspecto']} ({p['Regência']})"))
+        y_pr -= 14
 
+    # Seção 6: Dedicatória Oficial
+    y_sec6_title = y_pr - 8
     c.setFont(FONTE_BOLD_NOME, 11)
     c.setFillColor(cor_azul_escuro)
-    c.drawString(40, y_pr - 10, seguro_texto("6. Guia Didático & Dedicatória Oficial"))
+    c.drawString(40, y_sec6_title, seguro_texto("6. Guia Didático & Dedicatória Oficial"))
     c.setStrokeColor(cor_azul_escuro)
-    c.line(40, y_pr - 14, w_page - 40, y_pr - 14)
+    c.line(40, y_sec6_title - 4, w_page - 40, y_sec6_title - 4)
 
-    y_card = y_pr - 150
+    y_card = y_sec6_title - 130
     c.setFillColor(cor_topo)
-    c.roundRect(40, y_card, w_page - 80, 125, 6, fill=1, stroke=0)
+    c.roundRect(40, y_card, w_page - 80, 116, 6, fill=1, stroke=0)
 
     c.setFillColor(HexColor('#64b5f6'))
     c.setFont(FONTE_BOLD_NOME, 9.5)
-    c.drawString(55, y_card + 102, seguro_texto("Uma mensagem de Douglas Rosa (@astrolodoug) para você:"))
+    c.drawString(55, y_card + 94, seguro_texto("Uma mensagem de Douglas Rosa (@astrolodoug) para você:"))
     c.setFillColor(HexColor('#ffffff'))
     c.setFont(FONTE_OBLIQUE_NOME, 8)
-    c.drawString(55, y_card + 85, seguro_texto('"O mapa astral não é uma sentença estática: é uma partitura rítmica viva.'))
-    c.drawString(55, y_card + 72, seguro_texto('A Dança dos Ponteiros (APRS) revela o momento exato em que cada tema'))
-    c.drawString(55, y_card + 59, seguro_texto('é convocado a amadurecer ou expandir. Use essas datas como coordenadas de ação."'))
+    c.drawString(55, y_card + 78, seguro_texto('"O mapa astral não é uma sentença estática: é uma partitura rítmica viva.'))
+    c.drawString(55, y_card + 65, seguro_texto('A Dança dos Ponteiros (APRS) revela o momento exato em que cada tema'))
+    c.drawString(55, y_card + 52, seguro_texto('é convocado a amadurecer ou expandir. Use essas datas como coordenadas de ação."'))
 
     c.setFillColor(HexColor('#64b5f6'))
     c.setFont(FONTE_BOLD_NOME, 8.5)
-    c.drawString(55, y_card + 35, seguro_texto("Atendimentos, Formações e Estudos:"))
+    c.drawString(55, y_card + 32, seguro_texto("Atendimentos, Formações e Estudos:"))
     c.setFillColor(HexColor('#ffffff'))
     c.setFont(FONTE_UNICODE_NOME, 8)
-    c.drawString(55, y_card + 20, seguro_texto("Instagram: @astrolodoug  |  WhatsApp: +55 (11) 97711-7024  |  YouTube: @astrolodoug"))
+    c.drawString(55, y_card + 18, seguro_texto("Instagram: @astrolodoug  |  WhatsApp: +55 (11) 97711-7024  |  YouTube: @astrolodoug"))
 
+    # Rodapé Página 2
     c.setStrokeColor(cor_borda)
-    c.line(40, 40, w_page - 40, 40)
+    c.line(40, 36, w_page - 40, 36)
     c.setFont(FONTE_UNICODE_NOME, 7.5)
     c.setFillColor(HexColor('#555555'))
-    c.drawString(40, 28, seguro_texto("Astrologia Consciente | Todos os direitos reservados - @astrolodoug"))
-    c.drawRightString(w_page - 40, 28, seguro_texto("Página 2 de 2"))
+    c.drawString(40, 24, seguro_texto("Astrologia Consciente | Todos os direitos reservados - @astrolodoug"))
+    c.drawRightString(w_page - 40, 24, seguro_texto("Página 2 de 2"))
 
     c.save()
     buf.seek(0)
@@ -992,7 +1039,6 @@ if st.session_state.mapa_gerado:
             dias_v = (DATA_ANALISE - dt_nasc).days
             asc_b = float(obter_dado(sujeito.first_house, 'abs_pos', 0.0))
 
-            # POSIÇÕES REAIS DOS PONTEIROS HOJE
             tab_pont = []
             ponteiros_calculados = []
             for pn, ft, pb in FATORES:
@@ -1010,7 +1056,6 @@ if st.session_state.mapa_gerado:
                 tab_pont.append(item_pont)
                 ponteiros_calculados.append(item_pont)
 
-            # CÁLCULO DE ASPETOS REAIS DOS PONTEIROS HOJE
             ASPETOS_HOJE_DEF = [(0,"Conjunção","neutra",5.0),(60,"Sextil","harmonica",4.0),(90,"Quadratura","tensao",4.5),(120,"Trígono","harmonica",4.5),(180,"Oposição","tensao",5.0)]
             aspetos_hoje = []
             for pt in ponteiros_calculados:
@@ -1030,12 +1075,10 @@ if st.session_state.mapa_gerado:
                             })
             aspetos_hoje.sort(key=lambda x: x['orbe'])
 
-            # PROJEÇÃO DINÂMICA REAL DOS PRÓXIMOS 12 MESES
             eventos_todos = calcular_projecoes_reais(DATA_ANALISE, dt_nasc, asc_b, natal_para_aspeto, casas_p, FATORES)
             cronograma_12m = selecionar_cronograma_equilibrado(eventos_todos, 8)
             tab_fp = [{"Data": ev['data_str'], "Ponteiro": ev['ponteiro'], "Aspecto": ev['aspecto'], "Regência": ev['regencia']} for ev in cronograma_12m]
 
-            # TRÂNSITOS REAIS DE PLANETAS LENTOS
             try:
                 sujeito_tr = AstrologicalSubjectFactory.from_birth_data(name="Trânsitos", year=int(DATA_ANALISE.year), month=int(DATA_ANALISE.month), day=int(DATA_ANALISE.day), hour=12, minute=0, lat=float(lat), lng=float(lng), tz_str=tz_str)
                 pos_lentos_hoje = {
@@ -1066,14 +1109,13 @@ if st.session_state.mapa_gerado:
             if not tab_ta:
                 tab_ta = [{"Trânsito": "Saturno", "Aspecto": "Trânsito Angular", "Natal Alvo": "Eixo Cardinal", "Regência Ativada": "Saturno"}]
 
-            # SWOT 100% DINÂMICO BASEADO NO MAPA NATAL E PROJEÇÕES
             sol_dict_info = {"signo": nome_sig(obter_dado(sujeito.sun, 'sign', '')), "casa": mapa_casas_planetas.get("Sol", 10)}
             lua_dict_info = {"signo": nome_sig(obter_dado(sujeito.moon, 'sign', '')), "casa": mapa_casas_planetas.get("Lua", 4)}
             asc_dict_info = {"signo": nome_sig(obter_dado(sujeito.first_house, 'sign', '')), "casa": 1}
 
             swot_data = gerar_swot_dinamico(sol_dict_info, lua_dict_info, asc_dict_info, elem_dominante, contagem_elem, eventos_todos)
 
-            # BÚSSOLA CONSCIENTE DO DIA (PERSONALIZADA)
+            # BÚSSOLA CONSCIENTE DO DIA
             frase_dia, dica_pratica = calcular_bussola_do_dia(DATA_ANALISE, aspetos_hoje, tab_pont)
             st.markdown(f"""
             <div style="background: linear-gradient(135deg, #1f1b29 0%, #2b263b 100%);
