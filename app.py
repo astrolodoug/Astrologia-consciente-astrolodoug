@@ -1,4 +1,4 @@
-import os, json, ssl, math, textwrap, urllib.request, urllib.parse
+import os, json, ssl, math, base64, textwrap, urllib.request, urllib.parse
 from io import BytesIO
 from datetime import datetime, timedelta
 import streamlit as st
@@ -27,43 +27,110 @@ if "mapa_gerado" not in st.session_state:
 if "contato_salvo" not in st.session_state:
     st.session_state.contato_salvo = ""
 
-st.markdown("""
+# ==================== PADRÃO VETORIAL DE SÍMBOLOS ASTROLÓGICOS NO FUNDO ====================
+SVG_FUNDO_ASTRO = """<svg xmlns="http://www.w3.org/2000/svg" width="440" height="440" viewBox="0 0 440 440">
+  <g fill="none" stroke="#7df9ff" stroke-opacity="0.06">
+    <circle cx="220" cy="220" r="165" stroke-width="1" stroke-dasharray="4 6"/>
+    <circle cx="220" cy="220" r="125" stroke-width="0.8"/>
+    <circle cx="220" cy="220" r="55" stroke-width="0.7" stroke-dasharray="2 4"/>
+    <line x1="40" y1="220" x2="400" y2="220" stroke-width="0.6" stroke-dasharray="3 6"/>
+    <line x1="220" y1="40" x2="220" y2="400" stroke-width="0.6" stroke-dasharray="3 6"/>
+    <line x1="92" y1="92" x2="348" y2="348" stroke-width="0.4" stroke-dasharray="2 8"/>
+    <line x1="348" y1="92" x2="92" y2="348" stroke-width="0.4" stroke-dasharray="2 8"/>
+    <polyline points="35,60 75,40 115,68 140,35" stroke-width="0.7" stroke-opacity="0.08"/>
+    <polyline points="310,385 355,365 395,390 420,360" stroke-width="0.7" stroke-opacity="0.08"/>
+  </g>
+  <g fill="#7df9ff" fill-opacity="0.085" font-family="DejaVu Sans, Segoe UI Symbol, sans-serif" text-anchor="middle">
+    <text x="220" y="45" font-size="20">♈</text>
+    <text x="308" y="68" font-size="18">♉</text>
+    <text x="372" y="132" font-size="19">♊</text>
+    <text x="395" y="226" font-size="20">♋</text>
+    <text x="372" y="315" font-size="19">♌</text>
+    <text x="308" y="378" font-size="18">♍</text>
+    <text x="220" y="402" font-size="20">♎</text>
+    <text x="132" y="378" font-size="18">♏</text>
+    <text x="68" y="315" font-size="19">♐</text>
+    <text x="45" y="226" font-size="20">♑</text>
+    <text x="68" y="132" font-size="19">♒</text>
+    <text x="132" y="68" font-size="18">♓</text>
+  </g>
+  <g fill="#dcd6f7" fill-opacity="0.075" font-family="DejaVu Sans, Segoe UI Symbol, sans-serif" text-anchor="middle">
+    <text x="220" y="145" font-size="17">☉</text>
+    <text x="295" y="185" font-size="16">☽</text>
+    <text x="285" y="270" font-size="16">☿</text>
+    <text x="220" y="305" font-size="17">♀</text>
+    <text x="155" y="270" font-size="16">♂</text>
+    <text x="145" y="185" font-size="16">♃</text>
+    <text x="38" y="38" font-size="18">♄</text>
+    <text x="402" y="38" font-size="18">♅</text>
+    <text x="38" y="410" font-size="18">♆</text>
+    <text x="402" y="410" font-size="18">♇</text>
+    <text x="190" y="225" font-size="13">✦</text>
+    <text x="250" y="225" font-size="13">✧</text>
+    <circle cx="35" cy="60" r="1.8" fill="#7df9ff" fill-opacity="0.15"/>
+    <circle cx="75" cy="40" r="2.2" fill="#7df9ff" fill-opacity="0.18"/>
+    <circle cx="115" cy="68" r="1.8" fill="#7df9ff" fill-opacity="0.15"/>
+    <circle cx="355" cy="365" r="2.2" fill="#7df9ff" fill-opacity="0.18"/>
+    <circle cx="395" cy="390" r="1.8" fill="#7df9ff" fill-opacity="0.15"/>
+  </g>
+</svg>"""
+
+B64_FUNDO_ASTRO = base64.b64encode(SVG_FUNDO_ASTRO.encode("utf-8")).decode("utf-8")
+
+st.markdown(f"""
 <style>
-.stApp { background: #2b263b; color: #f0f0f0; }
-header[data-testid="stHeader"] {
+.stApp {{
+    background-color: #2b263b !important;
+    background-image: url("data:image/svg+xml;base64,{B64_FUNDO_ASTRO}") !important;
+    background-repeat: repeat !important;
+    background-size: 420px 420px !important;
+    background-attachment: fixed !important;
+    color: #f0f0f0;
+}}
+header[data-testid="stHeader"] {{
     background-color: #1f1b29 !important;
     border-bottom: 1px solid rgba(125, 249, 255, 0.2) !important;
-}
-[data-testid="stSidebarCollapsedControl"] {
+}}
+[data-testid="stSidebarCollapsedControl"] {{
     background-color: #1f1b29 !important;
     border: 1.5px solid #7df9ff !important;
     border-radius: 8px !important;
     padding: 3px 8px !important;
     box-shadow: 0 0 12px rgba(125, 249, 255, 0.35) !important;
-}
-[data-testid="stSidebarCollapsedControl"]:hover { background-color: #2b263b !important; }
-[data-testid="stSidebarCollapsedControl"] svg { fill: #7df9ff !important; stroke: #7df9ff !important; }
-[data-testid="stSidebar"] { background: #1f1b29; color: #f0f0f0; }
-h1, h2, h3 { color: #7df9ff !important; }
-p, label, span { color: #dcd6f7 !important; }
-.stButton > button {
+}}
+[data-testid="stSidebarCollapsedControl"]:hover {{ background-color: #2b263b !important; }}
+[data-testid="stSidebarCollapsedControl"] svg {{ fill: #7df9ff !important; stroke: #7df9ff !important; }}
+[data-testid="stSidebar"] {{
+    background-color: #1f1b29 !important;
+    background-image: url("data:image/svg+xml;base64,{B64_FUNDO_ASTRO}") !important;
+    background-repeat: repeat !important;
+    background-size: 360px 360px !important;
+    color: #f0f0f0;
+}}
+h1, h2, h3 {{ color: #7df9ff !important; }}
+p, label, span {{ color: #dcd6f7 !important; }}
+.stButton > button {{
     background: linear-gradient(135deg, #7df9ff 0%, #48cae4 100%) !important;
     border: 1px solid #7df9ff !important;
     border-radius: 10px !important;
     padding: 0.6rem 1rem !important;
     box-shadow: 0 4px 14px rgba(125, 249, 255, 0.35) !important;
     width: 100% !important;
-}
-.stButton > button p, .stButton > button span {
+}}
+.stButton > button p, .stButton > button span {{
     color: #0e0b16 !important;
     font-size: 1.05rem !important;
     font-weight: 800 !important;
-}
-.stSuccess, .stInfo, .stWarning {
-    background: #1f1b29 !important;
+}}
+.stSuccess, .stInfo, .stWarning {{
+    background: rgba(31, 27, 41, 0.92) !important;
     color: #7df9ff !important;
     border: 1px solid #7df9ff;
-}
+}}
+[data-testid="stTable"] {{
+    background: rgba(31, 27, 41, 0.82) !important;
+    border-radius: 8px;
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -990,7 +1057,6 @@ st.sidebar.link_button("📸 Seguir no Instagram", "https://instagram.com/astrol
 st.sidebar.link_button("▶️ Acessar Canal no YouTube", "https://youtube.com/@astrolodoug?si=YimzRQs7yL1jJMSO", use_container_width=True)
 
 if st.session_state.mapa_gerado:
-    # SCRIPT DE FECHAMENTO AUTOMÁTICO DO PAINEL MOBILE
     st.components.v1.html("""
     <script>
     function autoFecharSidebarMobile() {
@@ -1019,7 +1085,6 @@ if st.session_state.mapa_gerado:
     </script>
     """, height=0)
 
-    # BARRA SUPERIOR DE CONTROLE E NAVEGAÇÃO
     c_top_info, c_top_btn = st.columns([3, 1])
     with c_top_info:
         st.success(f"✅ **Mapa Ativo:** {nome} ({cidade}) | Data base: {DATA_ANALISE.strftime('%d/%m/%Y')}")
