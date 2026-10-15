@@ -109,6 +109,8 @@ header[data-testid="stHeader"] {{
 }}
 h1, h2, h3 {{ color: #7df9ff !important; }}
 p, label, span {{ color: #dcd6f7 !important; }}
+
+/* Botões Padrão de Ação */
 .stButton > button {{
     background: linear-gradient(135deg, #7df9ff 0%, #48cae4 100%) !important;
     border: 1px solid #7df9ff !important;
@@ -122,6 +124,65 @@ p, label, span {{ color: #dcd6f7 !important; }}
     font-size: 1.05rem !important;
     font-weight: 800 !important;
 }}
+
+/* ==================== ESTILIZAÇÃO DE ALTO IMPACTO PARA OS BOTÕES DE LINK ==================== */
+[data-testid="stLinkButton"] > a {{
+    font-weight: 800 !important;
+    font-size: 1.05rem !important;
+    letter-spacing: 0.4px !important;
+    border-radius: 10px !important;
+    transition: all 0.25s ease-in-out !important;
+    text-align: center !important;
+    padding: 0.65rem 1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+}}
+
+[data-testid="stLinkButton"] > a:hover {{
+    transform: translateY(-2px) scale(1.015) !important;
+}}
+
+[data-testid="stLinkButton"] > a p,
+[data-testid="stLinkButton"] > a span {{
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 1.02rem !important;
+}}
+
+/* WHATSAPP: Verde Esmeralda Vibrante */
+[data-testid="stLinkButton"] > a[href*="wa.me"],
+[data-testid="stLinkButton"] > a[href*="whatsapp.com"] {{
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%) !important;
+    border: 1.5px solid #25D366 !important;
+    box-shadow: 0 4px 16px rgba(37, 211, 102, 0.45) !important;
+}}
+[data-testid="stLinkButton"] > a[href*="wa.me"]:hover,
+[data-testid="stLinkButton"] > a[href*="whatsapp.com"]:hover {{
+    box-shadow: 0 6px 22px rgba(37, 211, 102, 0.7) !important;
+}}
+
+/* INSTAGRAM: Gradiente Oficial */
+[data-testid="stLinkButton"] > a[href*="instagram.com"] {{
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important;
+    border: 1.5px solid #f09433 !important;
+    box-shadow: 0 4px 16px rgba(220, 39, 67, 0.45) !important;
+}}
+[data-testid="stLinkButton"] > a[href*="instagram.com"]:hover {{
+    box-shadow: 0 6px 22px rgba(220, 39, 67, 0.7) !important;
+}}
+
+/* YOUTUBE: Vermelho Escarlate Intenso */
+[data-testid="stLinkButton"] > a[href*="youtube.com"] {{
+    background: linear-gradient(135deg, #FF0000 0%, #b20710 100%) !important;
+    border: 1.5px solid #FF0000 !important;
+    box-shadow: 0 4px 16px rgba(255, 0, 0, 0.45) !important;
+}}
+[data-testid="stLinkButton"] > a[href*="youtube.com"]:hover {{
+    box-shadow: 0 6px 22px rgba(255, 0, 0, 0.7) !important;
+}}
+
 .stSuccess, .stInfo, .stWarning {{
     background: rgba(31, 27, 41, 0.92) !important;
     color: #7df9ff !important;
@@ -331,7 +392,7 @@ def obter_geolocalizacao_segura(cidade_str, sigla_uf=""):
             return float(lat), float(lng), tz
 
     try:
-        geo = Nominatim(user_agent="astrologia_consciente_douglas_v5", timeout=12)
+        geo = Nominatim(user_agent="astrologia_consciente_douglas_v6", timeout=12)
         loc = geo.geocode(cidade_str)
         if loc:
             tf = TimezoneFinder()
@@ -784,7 +845,7 @@ def fabricar_pdf_estilizado(nome_c, cid_c, dt_ref, triade_info, pot_texto, swot_
     y_sec1_box_top = y_sec1_title - 14
     h_sec1 = 205.0
 
-    # Box Esquerda: Tríade com Glifos e Vocação Completa (sem cortes)
+    # Box Esquerda: Tríade com Glifos e Vocação Completa
     c.setFillColor(cor_fundo_card)
     c.setStrokeColor(cor_borda)
     c.roundRect(40, y_sec1_box_top - h_sec1, 275, h_sec1, 5, fill=1, stroke=1)
